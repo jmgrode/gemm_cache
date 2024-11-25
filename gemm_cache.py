@@ -1,31 +1,33 @@
 from typing import Callable
-import packet.Packet as Packet
+from packet import Packet
+from memory import MemObject
 
-class GemmCache:
-    def __init__(self, matrix_size: int, num_matrices: int, send_packet: Callable, read_latency: int, write_latency: int, matmul_latency:int, matadd_latency: int):        self.matrix_size = matrix_size
+class GemmCache(MemObject):
+    def __init__(self, matrix_size: int, num_matrices: int, ports: list[Callable], read_latency: int, write_latency: int, matmul_latency:int, matadd_latency: int) -> None:
+        size = matrix_size * num_matrices # size is also addr_range
+        super().__init__(size, size, ports, read_latency, write_latency)
+        self.matrix_size = matrix_size
         self.num_matrices = num_matrices
-        self.send_packet = send_packet
-        read_latency = read_latency
-		self.write_latency = write_latency
-		self.matmul_latency = matmul_latency
-		self.matadd_latency = matadd_latency -> None:
-        Packet pkt
-        self.cache_size = matrix_size * num_matrices
-        self.read_latency = read_latency
-        self.write_latency = write_latency
         self.matmul_latency = matmul_latency
         self.matadd_latency = matadd_latency
+        self.matrices = [[0 for i in range(matrix_size)] for i in range(num_matrices)]
 
-    def recv_packet(self, pkt: Packet) -> None:
+    def recv_packet(self, port: int, pkt: Packet) -> None:
+        # TODO: implement loading and storing
         pass
 
-    def send_packet(self, pkt: Packet) -> None:
-        pass
 
-class Cache:
-    def __init__(self, size: int = 4096) -> None:
-        self.size = size
-        self.cache = []
+
+
+class Cache(MemObject):
+    def __init__(self, size: int, addr_range: int, ports: list[Callable], dram_port: int, read_latency: int, write_latency: int) -> None:
+        super().__init__(size, addr_range, ports, read_latency, write_latency)
+        self.dram_port = dram_port # port for fetching from memory
+        self.cache = {}
+        
+    def recv_packet(self, port: int, pkt: Packet) -> None:
+        # TODO: handle fetching from memory and evictions
+        pass
 
     def store(self, pkt: Packet) -> None:
         self.cache[pkt.addr] = pkt.data
