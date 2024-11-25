@@ -1,8 +1,8 @@
-from typing import Callable
 from packet import Packet
+from memory import MemObject
 
 class Cpu:
-    def __init__(self, memories: list, num_registers: int, register_bytes: int, gemm_port: int) -> None:
+    def __init__(self, memories: list[MemObject], num_registers: int, register_bytes: int, gemm_port: int) -> None:
         self.memories = memories # list of gemm_caches and drams directly connected to cpu
         self.registers = [0 for i in range(num_registers)]
         self.register_mask = [0xff][register_bytes-1] # length of each register in number of bytes
@@ -31,9 +31,6 @@ class Cpu:
     # TODO: add functions for printing out register and memory state
     
 
-    def recv_packet(self, port: int, pkt: Packet) -> None:
+    def process_packet(self, port: int, pkt: Packet) -> Packet:
         # TODO: implement loading and storing
         pass
-    
-    def send_packet(self, memory: int, pkt: Packet) -> None:
-        self.memories[memory](pkt)

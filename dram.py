@@ -8,7 +8,7 @@ class Dram(MemObject):
         super().__init__(size, addr_range, ports, read_latency, write_latency)
         self.memory = {}
 
-    def recv_packet(self, port: int, pkt: Packet) -> None:
+    def process_packet(self, port: int, pkt: Packet) -> Packet:
         # TODO: implement
         pass
 

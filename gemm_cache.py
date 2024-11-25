@@ -12,7 +12,7 @@ class GemmCache(MemObject):
         self.matadd_latency = matadd_latency
         self.matrices = [[0 for i in range(matrix_size)] for i in range(num_matrices)]
 
-    def recv_packet(self, port: int, pkt: Packet) -> None:
+    def process_packet(self, port: int, pkt: Packet) -> Packet:
         # TODO: implement loading and storing
         pass
 
@@ -25,7 +25,7 @@ class Cache(MemObject):
         self.dram_port = dram_port # port for fetching from memory
         self.cache = {}
         
-    def recv_packet(self, port: int, pkt: Packet) -> None:
+    def process_packet(self, port: int, pkt: Packet) -> Packet:
         # TODO: handle fetching from memory and evictions
         pass
 
