@@ -14,6 +14,7 @@ class Cpu:
     def __init__(self, memories: list[MemObject], num_registers: int, register_bytes: int, gemm_port: int, cpu_latencies: CpuLatencies) -> None:
         self.memories = memories # list of gemm_caches and drams directly connected to cpu
         self.registers = [0 for i in range(num_registers)]
+        self.register_bytes = register_bytes
         self.register_mask = [0xff][register_bytes-1] # length of each register in number of bytes
         self.pc = 0
         self.cpu_latencies = cpu_latencies
@@ -23,17 +24,19 @@ class Cpu:
         # Cpu translates cpu address range into byte range of each MemObject
         # eg if accessing address 1024 and a is memory covering [2047:1024] then the packet contains addr = 0
 
-    def load(self, dest_register: int, addr_register: int, immediate: int) -> None:
-        ld_req_pkt = Packet(1, self.registers[addr_register]+immediate, self.register_mask, None, 1)
+    def load(self, dest_register: int, addr_register: int, immediate: int) -> int:
+        ld_req_pkt = Packet(True, self.registers[addr_register]+immediate, self.register_bytes, None, 1)
         
         # Assuming cache is first memory in list
         ld_resp_pkt = self.memories[0].process_packet(ld_req_pkt)
         self.registers[dest_register] = ld_resp_pkt.data
+        return ld_req_pkt.latency
 
     def store(self, src_register: int, addr_register: int, immediate: int) -> int:
         # TODO: create a packet and send to corresponding memory
-        st_req_pkt = Packet(0, self.registers[addr_register]+immediate, self.register_mask, self.registers[src_register], 1)
-        self.memories[0].process_packet(st_req_pkt)
+        st_req_pkt = Packet(False, self.registers[addr_register]+immediate, self.register_bytes, self.registers[src_register], 1)
+        st_resp_pkt = self.memories[0].process_packet(st_req_pkt)
+        return  st_resp_pkt.latency
 
     def add_immediate(self, dest_register: int, src_register: int, immediate: int) -> int:
         self.registers[dest_register] = (self.registers[src_register] + immediate) & self.register_mask
