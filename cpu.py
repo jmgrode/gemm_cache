@@ -45,7 +45,32 @@ class Cpu:
         return self.cpu_latencies.multiply_latency
 
     # TODO: RISCV branch instruction (offset from current PC, immediate offset? register?)
+    def branch_if(self, cond_register: int, offset_register: int) -> int:
+        if self.registers[cond_register] == 1:
+            self.pc = (self.pc + self.registers[offset_register]) & self.register_mask
+            return self.cpu_latencies.branch_taken_latency
+        return self.cpu_latencies.branch_latency
+
     # TODO: RSICV jump instruction (offset from current PC, immediate offset?)
+    def jump(self, dest_register: int) -> int:
+        self.pc = self.registers[dest_register] & self.register_mask
+        return self.cpu_latencies.jump_latency
+
+    def bitwise_or(self, dest_register: int, src_register1: int, src_register2: int) -> int:
+        self.registers[dest_register] = (self.registers[src_register1] | self.registers[src_register2]) & self.register_mask
+        return self.cpu_latencies.logical_latency
+
+     def bitwise_and(self, dest_register: int, src_register1: int, src_register2: int) -> int:
+        self.registers[dest_register] = (self.registers[src_register1] & self.registers[src_register2]) & self.register_mask
+        return self.cpu_latencies.logical_latency
+
+    def bitwise_xor(self, dest_register: int, src_register1: int, src_register2: int) -> int:
+        self.registers[dest_register] = (self.registers[src_register1] ^ self.registers[src_register2]) & self.register_mask
+        return self.cpu_latencies.logical_latency
+
+    def bitwise_nor(self, dest_register: int, src_register1: int, src_register2: int) -> int:
+        self.registers[dest_register] = (~(self.registers[src_register1] | self.registers[src_register2])) & self.register_mask
+        return self.cpu_latencies.logical_latency
 
     # TODO: add functions for GeMMCache ops
     # TODO: add functions for printing out register and memory state
