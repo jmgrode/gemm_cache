@@ -14,12 +14,16 @@ class Cpu:
         # eg if accessing address 1024 and a is memory covering [2047:1024] then the packet contains addr = 0
 
     def load(self, dest_register: int, addr_register: int, immediate: int) -> None:
-        # TODO: create a packet and send to corresponding memory
-        pass
+        ld_req_pkt = Packet(1, self.registers[addr_register]+immediate, self.register_mask, None, 1)
+        
+        # Assuming cache is first memory in list
+        ld_resp_pkt = self.memories[0].process_packet(ld_req_pkt)
+        self.registers[dest_register] = ld_resp_pkt.data
 
     def store(self, src_register: int, addr_register: int, immediate: int) -> None:
         # TODO: create a packet and send to corresponding memory
-        pass
+        st_req_pkt = Packet(0, self.registers[addr_register]+immediate, self.register_mask, self.registers[src_register], 1)
+        self.memories[0].process_packet(st_req_pkt)
 
     def add_immediate(self, dest_register: int, src_register: int, immediate: int) -> None:
         self.registers[dest_register] = (self.registers[src_register] + immediate) & self.register_mask
