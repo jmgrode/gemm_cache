@@ -77,6 +77,11 @@ class Cpu:
 
     # TODO: add functions for GeMMCache ops
     # TODO: add functions for printing out register and memory state
+    def print_registers(self) -> None:
+        print("Register State:")
+        print(f"PC: 0x{self.pc:08x}")
+        for i, value in enumerate(self.registers):
+            print(f"R{i}: 0x{value:08x} ({value})")
 
     def process_packet(self, port: int, pkt: Packet) -> Packet:
         # TODO: implement loading and storing
