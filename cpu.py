@@ -5,7 +5,10 @@ class CpuLatencies:
     def __init__(self) -> None:
         self.add_latency = 1
         self.multiply_latency = 3
-        
+        self.branch_latency = 1
+        self.branch_taken_latency = 2
+        self.jump_latency = 2
+        self.logical_latency = 1
 
 class Cpu:
     def __init__(self, memories: list[MemObject], num_registers: int, register_bytes: int, gemm_port: int, cpu_latencies: CpuLatencies) -> None:
@@ -45,10 +48,40 @@ class Cpu:
         return self.cpu_latencies.multiply_latency
 
     # TODO: RISCV branch instruction (offset from current PC, immediate offset? register?)
+    def branch_if(self, cond_register: int, offset_register: int) -> int:
+        if self.registers[cond_register] == 1:
+            self.pc = (self.pc + self.registers[offset_register]) & self.register_mask
+            return self.cpu_latencies.branch_taken_latency
+        return self.cpu_latencies.branch_latency
+
     # TODO: RSICV jump instruction (offset from current PC, immediate offset?)
+    def jump(self, dest_register: int) -> int:
+        self.pc = self.registers[dest_register] & self.register_mask
+        return self.cpu_latencies.jump_latency
+
+    def bitwise_or(self, dest_register: int, src_register1: int, src_register2: int) -> int:
+        self.registers[dest_register] = (self.registers[src_register1] | self.registers[src_register2]) & self.register_mask
+        return self.cpu_latencies.logical_latency
+
+     def bitwise_and(self, dest_register: int, src_register1: int, src_register2: int) -> int:
+        self.registers[dest_register] = (self.registers[src_register1] & self.registers[src_register2]) & self.register_mask
+        return self.cpu_latencies.logical_latency
+
+    def bitwise_xor(self, dest_register: int, src_register1: int, src_register2: int) -> int:
+        self.registers[dest_register] = (self.registers[src_register1] ^ self.registers[src_register2]) & self.register_mask
+        return self.cpu_latencies.logical_latency
+
+    def bitwise_nor(self, dest_register: int, src_register1: int, src_register2: int) -> int:
+        self.registers[dest_register] = (~(self.registers[src_register1] | self.registers[src_register2])) & self.register_mask
+        return self.cpu_latencies.logical_latency
 
     # TODO: add functions for GeMMCache ops
     # TODO: add functions for printing out register and memory state
+    def print_registers(self) -> None:
+        print("Register State:")
+        print(f"PC: 0x{self.pc:08x}")
+        for i, value in enumerate(self.registers):
+            print(f"R{i}: 0x{value:08x} ({value})")
 
     def process_packet(self, port: int, pkt: Packet) -> Packet:
         # TODO: implement loading and storing
