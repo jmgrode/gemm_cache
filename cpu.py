@@ -86,6 +86,3 @@ class Cpu:
         for i, value in enumerate(self.registers):
             print(f"R{i}: 0x{value:08x} ({value})")
 
-    def process_packet(self, port: int, pkt: Packet) -> Packet:
-        # TODO: implement loading and storing
-        pass
