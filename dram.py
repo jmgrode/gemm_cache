@@ -43,7 +43,7 @@ if __name__ == "__main__":
     assert(pkt_write_ret.addr == 7)
     assert(pkt_write_ret.size == 0)
     assert(pkt_write_ret.data == None)
-    assert(pkt_write_ret.latency = (256 / 64) * 12)
+    assert(pkt_write_ret.latency == (256 / 64) * 12)
 
     # test read
     pkt_read = Packet(load=True, addr=7, size=num_bytes, data=None, latency = pkt_write_ret.latency)
@@ -52,7 +52,7 @@ if __name__ == "__main__":
     assert(pkt_read_ret.addr == 7)
     assert(pkt_read_ret.size == num_bytes)
     assert(pkt_read_ret.data == data)
-    assert(pkt_read_ret.latency = (256 / 64) * 12 + (256 / 64) * 10)   
+    assert(pkt_read_ret.latency == (256 / 64) * 12 + (256 / 64) * 10)   
 
     # test another read
     expected_data = data & (data - 1)
