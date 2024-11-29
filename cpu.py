@@ -5,7 +5,10 @@ class CpuLatencies:
     def __init__(self) -> None:
         self.add_latency = 1
         self.multiply_latency = 3
-        
+        self.branch_latency = 1
+        self.branch_taken_latency = 2
+        self.jump_latency = 2
+        self.logical_latency = 1
 
 class Cpu:
     def __init__(self, memories: list[MemObject], num_registers: int, register_bytes: int, gemm_port: int, cpu_latencies: CpuLatencies) -> None:
