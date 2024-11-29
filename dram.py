@@ -32,6 +32,9 @@ class Dram(MemObject):
         self.memory[pkt.addr : pkt.addr + pkt.size] = pkt.data
         pkt.latency += (pkt.size // self.burst_size) * self.write_latency
         return pkt
+    
+    def print(self, starting_addr: int) -> None:
+        self.memory.print(starting_addr)
 
 if __name__ == "__main__":
     print("Testing DRAM")

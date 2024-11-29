@@ -1,4 +1,5 @@
-from packet import Packet
+from typing import Callable
+from packet import Packet, MatrixPacket
 from memory import MemObject
 
 class CpuLatencies:
@@ -6,7 +7,6 @@ class CpuLatencies:
         self.add_latency = 1
         self.multiply_latency = 3
         self.branch_latency = 1
-        self.branch_taken_latency = 2
         self.jump_latency = 2
         self.logical_latency = 1
 
@@ -24,19 +24,58 @@ class Cpu:
         # Cpu translates cpu address range into byte range of each MemObject
         # eg if accessing address 1024 and a is memory covering [2047:1024] then the packet contains addr = 0
 
+    def get_instruction(self, instruction: str) -> Callable:
+        instruction_dict = {
+            "load": self.load,
+            "store": self.store,
+            "move_memory": self.move_memory,
+            "add": self.add,
+            "add_immediate": self.add_immediate,
+            "multiply": self.multiply,
+            "branch_if": self.branch_if,
+            "jump": self.jump,
+            "bitwise_or": self.bitwise_or,
+            "bitwise_and": self.bitwise_and,
+            "bitwise_xor": self.bitwise_xor,
+            "bitwise_nor": self.bitwise_nor,
+            "bitwise_not": self.bitwise_not,
+            "logical_shift_left": self.logical_shift_left,
+            "logical_shift_right": self.logical_shift_right,
+        }
+        return instruction_dict[instruction]
+
     def load(self, dest_register: int, addr_register: int, immediate: int) -> int:
-        ld_req_pkt = Packet(True, self.registers[addr_register]+immediate, self.register_bytes, None, 1)
+        full_address = (self.registers[addr_register] + immediate) & self.register_mask
+        memory_idx,addr = self.translate_addr(full_address)
+        ld_req_pkt = Packet(True, addr, self.register_bytes, None, 1)
         
-        # Assuming cache is first memory in list
-        ld_resp_pkt = self.memories[0].process_packet(ld_req_pkt)
+        ld_resp_pkt = self.memories[memory_idx].process_packet(ld_req_pkt)
         self.registers[dest_register] = ld_resp_pkt.data
         return ld_req_pkt.latency
 
     def store(self, src_register: int, addr_register: int, immediate: int) -> int:
-        # TODO: create a packet and send to corresponding memory
-        st_req_pkt = Packet(False, self.registers[addr_register]+immediate, self.register_bytes, self.registers[src_register], 1)
-        st_resp_pkt = self.memories[0].process_packet(st_req_pkt)
-        return  st_resp_pkt.latency
+        full_address = (self.registers[addr_register] + immediate) & self.register_mask
+        memory_idx,addr = self.translate_addr(full_address)
+        st_req_pkt = Packet(False, addr, self.register_bytes, self.registers[src_register], 1)
+
+        st_resp_pkt = self.memories[memory_idx].process_packet(st_req_pkt)
+        return st_resp_pkt.latency
+
+    def move_memory(self, src_addr_register: int, dest_addr_register: int, size_register: int) -> None:
+        src_full_address = (self.registers[src_addr_register]) & self.register_mask
+        src_memory_idx, src_addr = self.translate_addr(src_full_address)
+
+        dest_full_address = (self.registers[dest_addr_register]) & self.register_mask
+        dest_memory_idx, dest_addr = self.translate_addr(dest_full_address)
+
+        size = self.registers[size_register]
+
+        ld_req_pkt = Packet(True, src_addr, size)
+        ld_resp_pkt = self.memories[src_memory_idx].process_packet(ld_req_pkt)
+
+        st_req_pkt = Packet(False, dest_addr, size, ld_resp_pkt.data, ld_resp_pkt.latency)
+        st_resp_pkt = self.memories[dest_memory_idx].process_packet(st_req_pkt)
+        return st_resp_pkt.latency
 
     def add_immediate(self, dest_register: int, src_register: int, immediate: int) -> int:
         self.registers[dest_register] = (self.registers[src_register] + immediate) & self.register_mask
@@ -50,14 +89,11 @@ class Cpu:
         self.registers[dest_register] = (self.registers[src_register1] * self.registers[src_register2]) & self.register_mask
         return self.cpu_latencies.multiply_latency
 
-    # TODO: RISCV branch instruction (offset from current PC, immediate offset? register?)
     def branch_if(self, cond_register: int, offset_register: int) -> int:
-        if self.registers[cond_register] == 1:
+        if self.registers[cond_register] != 0:
             self.pc = (self.pc + self.registers[offset_register]) & self.register_mask
-            return self.cpu_latencies.branch_taken_latency
         return self.cpu_latencies.branch_latency
 
-    # TODO: RSICV jump instruction (offset from current PC, immediate offset?)
     def jump(self, dest_register: int) -> int:
         self.pc = self.registers[dest_register] & self.register_mask
         return self.cpu_latencies.jump_latency
@@ -66,7 +102,7 @@ class Cpu:
         self.registers[dest_register] = (self.registers[src_register1] | self.registers[src_register2]) & self.register_mask
         return self.cpu_latencies.logical_latency
 
-     def bitwise_and(self, dest_register: int, src_register1: int, src_register2: int) -> int:
+    def bitwise_and(self, dest_register: int, src_register1: int, src_register2: int) -> int:
         self.registers[dest_register] = (self.registers[src_register1] & self.registers[src_register2]) & self.register_mask
         return self.cpu_latencies.logical_latency
 
@@ -77,12 +113,58 @@ class Cpu:
     def bitwise_nor(self, dest_register: int, src_register1: int, src_register2: int) -> int:
         self.registers[dest_register] = (~(self.registers[src_register1] | self.registers[src_register2])) & self.register_mask
         return self.cpu_latencies.logical_latency
+    
+    def bitwise_not(self, dest_register: int, src_register: int) -> int:
+        self.registers[dest_register] = (~(self.registers[src_register])) & self.register_mask
+        return self.cpu_latencies.logical_latency
+    
+    def logical_shift_left(self, dest_register: int, value_register: int, shift_size_register: int) -> int:
+        self.registers[dest_register] = (self.registers[value_register] << self.registers[shift_size_register]) & self.register_mask
+        return self.cpu_latencies.logical_latency
 
-    # TODO: add functions for GeMMCache ops
-    # TODO: add functions for printing out register and memory state
+    def logical_shift_right(self, dest_register: int, value_register: int, shift_size_register: int) -> int:
+        self.registers[dest_register] = (self.registers[value_register] >> self.registers[shift_size_register]) & self.register_mask
+        return self.cpu_latencies.logical_latency
+
+    def matrix_multiply(self, dest_addr_register: int, src_addr_register1: int, src_addr_register2: int) -> int:
+        # memory_idx should be the same for all 3 since they should be in same GeMMCache
+        memory_idx,dest_addr = self.translate_addr(self.registers[dest_addr_register])
+        memory_idx,src1_addr = self.translate_addr(self.registers[src_addr_register1])
+        memory_idx,src2_addr = self.translate_addr(self.registers[src_addr_register2])
+        mm_req_pkt = MatrixPacket(True, src1_addr, src2_addr, dest_addr)
+        mm_resp_pkt = self.memories[memory_idx].process_matrix_op_packet(mm_req_pkt)
+        return mm_resp_pkt.latency
+
+    def matrix_add(self, dest_addr_register: int, src_addr_register1: int, src_addr_register2: int) -> int:
+        # memory_idx should be the same for all 3 since they should be in same GeMMCache
+        memory_idx,dest_addr = self.translate_addr(self.registers[dest_addr_register])
+        memory_idx,src1_addr = self.translate_addr(self.registers[src_addr_register1])
+        memory_idx,src2_addr = self.translate_addr(self.registers[src_addr_register2])
+        ma_req_pkt = MatrixPacket(True, src1_addr, src2_addr, dest_addr)
+        ma_resp_pkt = self.memories[memory_idx].process_matrix_op_packet(ma_req_pkt)
+        return ma_resp_pkt.latency
+    
     def print_registers(self) -> None:
         print("Register State:")
         print(f"PC: 0x{self.pc:08x}")
         for i, value in enumerate(self.registers):
             print(f"R{i}: 0x{value:08x} ({value})")
 
+    def print_memory(self) -> None:
+        print("Memory State:")
+        current_range = 0
+        for mem_idx,mem in enumerate(self.memories):
+            print(f"Memory Object {mem_idx}")
+            mem.print(current_range)
+            current_range += mem.addr_range
+                
+    # translate memory address to memories index and address inside memories[index]
+    def translate_addr(self, addr: int) -> tuple[int,int]:
+        for i, memory in enumerate(self.memories):
+            if addr >= memory.addr_range:
+                addr -= memory.addr_range
+            else:
+                return i,addr
+        return -1,-1 # address is out of bounds
+        
+    

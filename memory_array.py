@@ -37,6 +37,10 @@ class MemoryArray:
         for i in range(size):
             del self.array[addr + i]
 
+    def print(self, starting_addr: int) -> None:
+        for addr in sorted(self.array.keys()):
+            print(f"Address {starting_addr+addr:08X}: {self.array[addr]:02X}")
+
 def key_to_addr_size(key) -> tuple[int, int]:
     if isinstance(key, slice):
         addr = key.start

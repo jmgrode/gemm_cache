@@ -9,3 +9,6 @@ class MemObject:
     
     def process_packet(self, pkt: Packet) -> Packet:
         pass
+
+    def print(self, starting_addr: int) -> None:
+        pass
