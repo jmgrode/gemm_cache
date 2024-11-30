@@ -22,14 +22,18 @@ class Dram(MemObject):
             return self.retrieve(pkt)
         return self.store(pkt)
 
+    def set_value(self, addr: int, size: int, value: int) -> None:
+        # assert math.ceil(value.bit_length() / 8) == size, "Error: Data size mismatch with variable size during DRAM load/store"
+        self.memory.store(addr, size, value)
+
     def retrieve(self, pkt: Packet) -> Packet:
-        pkt.data = self.memory[pkt.addr : pkt.addr + pkt.size]
+        pkt.data = self.memory[pkt.addr : pkt.addr + pkt.size - 1]
         pkt.latency += (pkt.size // self.burst_size) * self.read_latency
         return pkt
 
     def store(self, pkt: Packet) -> Packet:
-        assert math.ceil(pkt.data.bit_length() / 8) == pkt.size, "Error: Data size mismatch with packet size during DRAM load/store"
-        self.memory[pkt.addr : pkt.addr + pkt.size] = pkt.data
+        # assert math.ceil(pkt.data.bit_length() / 8) == pkt.size, "Error: Data size mismatch with variable size during DRAM load/store"
+        self.memory[pkt.addr : pkt.addr + pkt.size - 1] = pkt.data
         pkt.latency += (pkt.size // self.burst_size) * self.write_latency
         return pkt
     

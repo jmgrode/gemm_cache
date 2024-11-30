@@ -1,6 +1,7 @@
 from typing import Callable
 from packet import Packet, MatrixPacket
 from memory import MemObject
+from program import Program
 
 class CpuLatencies:
     def __init__(self) -> None:
@@ -15,20 +16,32 @@ class Cpu:
         self.memories = memories # list of gemm_caches and drams directly connected to cpu
         self.registers = [0 for i in range(num_registers)]
         self.register_bytes = register_bytes
-        self.register_mask = [0xff][register_bytes-1] # length of each register in number of bytes
-        self.pc = 0
+        self.register_mask = [0xff, 0xffff, 0xffffff, 0xffffffff][register_bytes-1] # length of each register in number of bytes
         self.cpu_latencies = cpu_latencies
+        self.pc = 0
+        self.time = 0
         # each memory the cpu is connected to will contain addr_range part of the address space
         # eg if memories[0].addr_range = 1024 and memories[1].addr_range = 256 then
         # memories[0] covers bytes [1023:0] and memories[1] covers [1279:1024]
         # Cpu translates cpu address range into byte range of each MemObject
         # eg if accessing address 1024 and a is memory covering [2047:1024] then the packet contains addr = 0
 
+    def run_program(self, program: Program):
+        # instructions is a list of tuples with instruction name string followed by operands, e.g. ("add", 1, 2)
+        instructions = program.get_instructions()
+        while instructions[self.pc][0] != "halt":
+            instruction = instructions[self.pc]
+            instr_func = self.get_instruction(instruction[0])
+            self.time += instr_func(*instruction[1:])
+            self.pc = (self.pc + 1) & self.register_mask
+        print(f"Halted at cycle {self.time}")
+
     def get_instruction(self, instruction: str) -> Callable:
         instruction_dict = {
             "load": self.load,
             "store": self.store,
             "move_memory": self.move_memory,
+            "move": self.move,
             "add": self.add,
             "add_immediate": self.add_immediate,
             "multiply": self.multiply,
@@ -41,6 +54,8 @@ class Cpu:
             "bitwise_not": self.bitwise_not,
             "logical_shift_left": self.logical_shift_left,
             "logical_shift_right": self.logical_shift_right,
+            "matrix_multiply": self.matrix_multiply,
+            "matrix_add": self.matrix_add
         }
         return instruction_dict[instruction]
 
@@ -51,13 +66,14 @@ class Cpu:
         
         ld_resp_pkt = self.memories[memory_idx].process_packet(ld_req_pkt)
         self.registers[dest_register] = ld_resp_pkt.data
+        print(f"LOAD: r{dest_register} <- MEM[{full_address}] = {ld_resp_pkt.data}")
         return ld_req_pkt.latency
 
     def store(self, src_register: int, addr_register: int, immediate: int) -> int:
         full_address = (self.registers[addr_register] + immediate) & self.register_mask
         memory_idx,addr = self.translate_addr(full_address)
         st_req_pkt = Packet(False, addr, self.register_bytes, self.registers[src_register], 1)
-
+        print(f"STORE: MEM[{full_address}] <- r{src_register} ({self.registers[src_register]})")
         st_resp_pkt = self.memories[memory_idx].process_packet(st_req_pkt)
         return st_resp_pkt.latency
 
@@ -77,25 +93,31 @@ class Cpu:
         st_resp_pkt = self.memories[dest_memory_idx].process_packet(st_req_pkt)
         return st_resp_pkt.latency
 
+    def move(self, dest_register: int, immediate: int) -> int:
+        self.registers[dest_register] = immediate & self.register_mask
+        return self.cpu_latencies.logical_latency
+
     def add_immediate(self, dest_register: int, src_register: int, immediate: int) -> int:
         self.registers[dest_register] = (self.registers[src_register] + immediate) & self.register_mask
         return self.cpu_latencies.add_latency
 
     def add(self, dest_register: int, src_register1: int, src_register2: int) -> int:
         self.registers[dest_register] = (self.registers[src_register1] + self.registers[src_register2]) & self.register_mask
+        print(f"ADD: r{dest_register} = r{src_register1} ({self.registers[src_register1]}) + r{src_register2} ({self.registers[src_register2]}) = {self.registers[dest_register]}")
         return self.cpu_latencies.add_latency
 
     def multiply(self, dest_register: int, src_register1: int, src_register2: int) -> int:
         self.registers[dest_register] = (self.registers[src_register1] * self.registers[src_register2]) & self.register_mask
+        print(f"MUL: r{dest_register} = r{src_register1} ({self.registers[src_register1]}) * r{src_register2} ({self.registers[src_register2]}) = {self.registers[dest_register]}")
         return self.cpu_latencies.multiply_latency
 
-    def branch_if(self, cond_register: int, offset_register: int) -> int:
+    def branch_if(self, cond_register: int, immediate: int) -> int:
         if self.registers[cond_register] != 0:
-            self.pc = (self.pc + self.registers[offset_register]) & self.register_mask
+            self.pc = (self.pc + immediate - 1) & self.register_mask # -1 to account for +1 in run_program
         return self.cpu_latencies.branch_latency
 
     def jump(self, dest_register: int) -> int:
-        self.pc = self.registers[dest_register] & self.register_mask
+        self.pc = (self.registers[dest_register] - 1) & self.register_mask # -1 to account for +1 in run_program
         return self.cpu_latencies.jump_latency
 
     def bitwise_or(self, dest_register: int, src_register1: int, src_register2: int) -> int:
@@ -118,12 +140,12 @@ class Cpu:
         self.registers[dest_register] = (~(self.registers[src_register])) & self.register_mask
         return self.cpu_latencies.logical_latency
     
-    def logical_shift_left(self, dest_register: int, value_register: int, shift_size_register: int) -> int:
-        self.registers[dest_register] = (self.registers[value_register] << self.registers[shift_size_register]) & self.register_mask
+    def logical_shift_left(self, dest_register: int, value_register: int, shift_size_immediate: int) -> int:
+        self.registers[dest_register] = (self.registers[value_register] << shift_size_immediate) & self.register_mask
         return self.cpu_latencies.logical_latency
 
-    def logical_shift_right(self, dest_register: int, value_register: int, shift_size_register: int) -> int:
-        self.registers[dest_register] = (self.registers[value_register] >> self.registers[shift_size_register]) & self.register_mask
+    def logical_shift_right(self, dest_register: int, value_register: int, shift_size_immediate: int) -> int:
+        self.registers[dest_register] = (self.registers[value_register] >> shift_size_immediate) & self.register_mask
         return self.cpu_latencies.logical_latency
 
     def matrix_multiply(self, dest_addr_register: int, src_addr_register1: int, src_addr_register2: int) -> int:
