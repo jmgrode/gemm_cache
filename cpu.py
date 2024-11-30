@@ -165,6 +165,6 @@ class Cpu:
                 addr -= memory.addr_range
             else:
                 return i,addr
-        return -1,-1 # address is out of bounds
+        raise IndexError("Out of bounds memory access")
         
     
