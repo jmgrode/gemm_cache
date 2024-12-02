@@ -36,34 +36,34 @@ class GemmCache(MemObject):
         else:
             self.matrix_add(pkt.matA_start, pkt.matB_start, pkt.matC_start)
             pkt.latency += self.matadd_latency
+        return pkt
     
     def matrix_multiply(self, matA_start: int, matB_start: int, matC_start: int) -> None:
-        rows_A, cols_A = self.matrix_dim
-        rows_B, cols_B = self.matrix_dim
-
+        rows_A = cols_A = cols_B = self.matrix_dim
+        
         for i in range(rows_A):
             for j in range(cols_B):
                 result = 0
                 for k in range(cols_A):
-                    matA_addr = matA_start + (i * cols_A + k) * 2
-                    matB_addr = matB_start + (k * cols_B + j) * 2
+                    matA_addr = matA_start + (i * cols_A + k) * self.quantization
+                    matB_addr = matB_start + (k * cols_B + j) * self.quantization
 
                     valA = self.matrices.load(matA_addr, self.quantization)
                     valB = self.matrices.load(matB_addr, self.quantization)
 
                     result += valA * valB
 
-                matC_addr = matC_start + (i * cols_B + j) * 2
+                matC_addr = matC_start + (i * cols_B + j) * self.quantization
                 self.matrices.store(matC_addr, self.quantization, result)
 
     def matrix_add(self, matA_start: int, matB_start: int, matC_start: int) -> None:
-        rows, cols = self.matrix_dim
+        rows = cols = self.matrix_dim
 
         for i in range(rows):
             for j in range(cols):
-                matA_addr = matA_start + (i * cols + j) * 2
-                matB_addr = matB_start + (i * cols + j) * 2
-                matC_addr = matC_start + (i * cols + j) * 2
+                matA_addr = matA_start + (i * cols + j) * self.quantization
+                matB_addr = matB_start + (i * cols + j) * self.quantization
+                matC_addr = matC_start + (i * cols + j) * self.quantization
 
                 valA = self.matrices.load(matA_addr, self.quantization)
                 valB = self.matrices.load(matB_addr, self.quantization)
