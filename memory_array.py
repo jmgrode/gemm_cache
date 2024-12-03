@@ -30,7 +30,6 @@ class MemoryArray:
     def store(self, addr: int, size: int, data: int) -> None:
         for i in range(size):
             byte = (data >> ((size - i - 1) * 8)) & 0xff
-            # byte = (data >> (i * 8)) & 0xff
             self.array[addr + i] = byte
         assert len(self.array) <= self.size
             

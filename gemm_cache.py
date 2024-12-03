@@ -4,7 +4,7 @@ from memory_array import MemoryArray
 from dram import Dram
 
 class GemmCache(MemObject):
-    def __init__(self, matrix_dim: int, num_matrices: int, read_latency: int, write_latency: int, matmul_latency:int, matadd_latency: int) -> None:
+    def __init__(self, matrix_dim: int, num_matrices: int, read_latency: int, write_latency: int, matmul_latency:int, matadd_latency: int, bytes_per_element: int = 1) -> None:
         size = matrix_dim * matrix_dim * num_matrices # size is also addr_range
         super().__init__(size, size, read_latency, write_latency)
         self.matrix_dim = matrix_dim
@@ -12,7 +12,7 @@ class GemmCache(MemObject):
         self.matmul_latency = matmul_latency
         self.matadd_latency = matadd_latency
         self.matrices = MemoryArray(matrix_dim * matrix_dim * num_matrices)
-        self.quantization = 1
+        self.quantization = bytes_per_element
 
     def process_packet(self, pkt: Packet) -> Packet:
         if pkt.load:

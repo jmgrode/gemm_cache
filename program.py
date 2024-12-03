@@ -1,4 +1,6 @@
 class Program:
+    # this class lets you define the instructions in the program and converts them to a list to be passed into Cpu
+    # the implementations of the instructions are in cpu.py
     def __init__(self, register_bytes: int) -> None:
         self.instructions = []
         self.register_bytes = register_bytes
@@ -38,7 +40,7 @@ class Program:
             assert self.instructions[branch_addr][0] == "label_branch_if"
             label = self.instructions[branch_addr][2]
             self.instructions[branch_addr][2] = labels[self.instructions[branch_addr][2]]
-		#TODO: test this function
+		#TODO: test this function (test whether labels work)
         return self.instructions
 
     def halt(self) -> None:

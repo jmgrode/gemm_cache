@@ -3,11 +3,6 @@ from dram import Dram
 from gemm_cache import GemmCache, Cache
 from program import Program
 
-
-#TODO: if/where to include fetch latency; probably just add as a fixed value to all cpu instructions
-#TODO: write assembly programs for matrix multiplication with and without GeMMCache
-#TODO: test everything
-
 dram = Dram(32768, 100, 10)
 cache = Cache(1024, 32768, 8, 1, 1, dram) #TODO: change dram stuff arguments
 cpu_latencies = CpuLatencies()
