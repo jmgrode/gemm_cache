@@ -7,11 +7,11 @@ import numpy as np
 MATRIX_DIM = 4 # matrices are size MATRIX_DIM by MATRIX_DIM
 
 dram = Dram(32768, 100, 10)
-cache = Cache(1024, 32768, 8, 1, 1, dram) #TODO: change dram stuff arguments
+cache = Cache(256, 32768, 8, 1, 1, dram) #TODO: change dram stuff arguments
 cpu_latencies = CpuLatencies()
 REGISTER_BYTES = 1
-# cpu = Cpu([cache], 32, REGISTER_BYTES, -1, cpu_latencies)
-cpu = Cpu([dram], 32, REGISTER_BYTES, -1, cpu_latencies)
+cpu = Cpu([cache], 32, REGISTER_BYTES, -1, cpu_latencies)
+# cpu = Cpu([dram], 32, REGISTER_BYTES, -1, cpu_latencies)
 
 # -----------------------------------------
 # Initialize matrices in DRAM

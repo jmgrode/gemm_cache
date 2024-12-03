@@ -88,36 +88,49 @@ class Cache(MemObject):
         cache_addr = pkt.addr & 0xF8
         if pkt.load:
             if cache_addr in self.tags and (self.tags[cache_addr] == pkt_tag):
+                print("tags match")
+                print(self.tags)
                 #return self.cache.load(cache_addr, pkt.size)
-                pkt.data = self.cache.load(cache_addr, pkt.size)
+                pkt.data = self.cache.load(pkt.addr & (0xFF), pkt.size)
                 return pkt
             elif cache_addr in self.tags:
-                evict_data = self.cache.load(cache_addr, self.block_size)
-                evict_pkt = Packet(False, self.tags[cache_addr] + cache_addr, self.block_size, evict_data, 1)
-                self.dram.process_packet(evict_pkt)
-                self.tags.pop(cache_addr)
+                print("tags don't match 1")
+                # print("should hit this once at most")
+                # evict_data = self.cache.load(cache_addr, self.block_size)
+                # evict_pkt = Packet(False, self.tags[cache_addr] + cache_addr, self.block_size, evict_data, 1)
+                # self.dram.process_packet(evict_pkt)
+                # self.tags.pop(cache_addr)
+                ld_size = pkt.size
+                pkt.size = self.block_size
                 new_data = self.dram.process_packet(pkt)
                 self.cache.store(new_data.addr & 0xF8, new_data.size, new_data.data)
                 self.tags[cache_addr]=pkt_tag
-                return new_data
+                pkt.size = ld_size
+                pkt.data = self.cache.load(pkt.addr & (0xFF), pkt.size)
+                return pkt
             else:
+                print("tags don't match 2")
+                ld_size = pkt.size
+                pkt.size = self.block_size
                 new_data = self.dram.process_packet(pkt)
                 self.cache.store(new_data.addr & 0xF8, new_data.size, new_data.data)
                 self.tags[cache_addr]=pkt_tag
-                return new_data
+                pkt.size = ld_size
+                pkt.data = self.cache.load(pkt.addr & (0xFF), pkt.size)
+                return pkt
         else:
             if cache_addr in self.tags and (self.tags[cache_addr] == pkt_tag):
-                self.cache.store(cache_addr, pkt.size, pkt.data)
-                # self.dram.process_packet(pkt)
+                self.cache.store(pkt.addr & (0xFF), pkt.size, pkt.data)
+                self.dram.process_packet(pkt)
                 return pkt
             elif cache_addr in self.tags and (self.tags[cache_addr] != pkt_tag):
                 
-                evict_data = self.cache.load(cache_addr, self.block_size)
-                evict_pkt = Packet(False, self.tags[cache_addr] + cache_addr, self.block_size, evict_data, 1)
-                self.dram.process_packet(evict_pkt)
-                self.tags.pop(cache_addr)
-                self.cache.store(cache_addr, pkt.size, pkt.data)
-                # self.dram.process_packet(pkt)
+                # evict_data = self.cache.load(cache_addr, self.block_size)
+                # evict_pkt = Packet(False, self.tags[cache_addr] + cache_addr, self.block_size, evict_data, 1)
+                # self.dram.process_packet(evict_pkt)
+                # self.tags.pop(cache_addr)
+                self.cache.store(pkt.addr & (0xFF), pkt.size, pkt.data)
+                self.dram.process_packet(pkt)
                 self.tags[cache_addr]=pkt_tag
                 return pkt
             else:
@@ -128,8 +141,8 @@ class Cache(MemObject):
                     eviction = self.cache.load(cache_addr)
                     self.dram.process_packet(eviction)
                     self.tags.pop(cache_addr)
-                self.cache.store(cache_addr, pkt.size, pkt.data)
-                # self.dram.process_packet(pkt)
+                self.cache.store(pkt.addr & (0xFF), pkt.size, pkt.data)
+                self.dram.process_packet(pkt)
                 self.tags[cache_addr]=pkt_tag
                 return pkt
 
