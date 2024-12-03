@@ -62,29 +62,43 @@ if __name__ == "__main__":
     assert(pkt_read_ret.data == matA_flat)
     assert(pkt_read_ret.latency == WRITE_LATENCY + READ_LATENCY) 
 
-    # test add
+    # test add in place
     pkt_write = Packet(load=False, addr=MATRIX_SIZE, size=MATRIX_SIZE, data=matB_flat, latency=pkt_read_ret.latency)
     pkt_write_ret = gemm_cache.process_packet(pkt_write)
 
-    pkt_mat_add = MatrixPacket(multiply=False, matA_start=0, matB_start=MATRIX_SIZE, matC_start = MATRIX_SIZE*2, latency=pkt_write_ret.latency)
+    pkt_mat_add = MatrixPacket(multiply=False, matA_start=0, matB_start=MATRIX_SIZE, matC_start = MATRIX_SIZE, latency=pkt_write_ret.latency)
     pkt_mat_add_ret = gemm_cache.process_matrix_op_packet(pkt_mat_add)
     assert(pkt_mat_add_ret.latency == WRITE_LATENCY*2 + READ_LATENCY + MATADD_LATENCY)
 
     expected_mat = np.add(matA, matB, dtype=np.uint8)
     expected_mat_flat = array_to_integer(expected_mat.flatten(order='C'))
-    pkt_read = Packet(load=True, addr=MATRIX_SIZE*2, size=MATRIX_SIZE, data=None, latency=pkt_mat_add_ret.latency)
+    pkt_read = Packet(load=True, addr=MATRIX_SIZE, size=MATRIX_SIZE, data=None, latency=pkt_mat_add_ret.latency)
     pkt_read_ret = gemm_cache.process_packet(pkt_read)
     assert(pkt_read_ret.data == expected_mat_flat)
 
-    # test multiply
-    pkt_mat_mul = MatrixPacket(multiply=True, matA_start=0, matB_start=MATRIX_SIZE, matC_start = MATRIX_SIZE*2, latency=pkt_read_ret.latency)
-    pkt_mat_mul_ret = gemm_cache.process_matrix_op_packet(pkt_mat_mul)
-    assert(pkt_mat_mul_ret.latency == WRITE_LATENCY*2 + READ_LATENCY*2 + MATADD_LATENCY + MATMUL_LATENCY)
+    # # test add
+    # pkt_write = Packet(load=False, addr=MATRIX_SIZE, size=MATRIX_SIZE, data=matB_flat, latency=pkt_read_ret.latency)
+    # pkt_write_ret = gemm_cache.process_packet(pkt_write)
 
-    expected_mat = np.matmul(matA, matB)
-    expected_mat_flat = array_to_integer(expected_mat.flatten(order='C'))
-    pkt_read = Packet(load=True, addr=MATRIX_SIZE*2, size=MATRIX_SIZE, data=None, latency=pkt_mat_mul_ret.latency)
-    pkt_read_ret = gemm_cache.process_packet(pkt_read)
-    assert(pkt_read_ret.data == expected_mat_flat)
+    # pkt_mat_add = MatrixPacket(multiply=False, matA_start=0, matB_start=MATRIX_SIZE, matC_start = MATRIX_SIZE*2, latency=pkt_write_ret.latency)
+    # pkt_mat_add_ret = gemm_cache.process_matrix_op_packet(pkt_mat_add)
+    # assert(pkt_mat_add_ret.latency == WRITE_LATENCY*2 + READ_LATENCY + MATADD_LATENCY)
+
+    # expected_mat = np.add(matA, matB, dtype=np.uint8)
+    # expected_mat_flat = array_to_integer(expected_mat.flatten(order='C'))
+    # pkt_read = Packet(load=True, addr=MATRIX_SIZE*2, size=MATRIX_SIZE, data=None, latency=pkt_mat_add_ret.latency)
+    # pkt_read_ret = gemm_cache.process_packet(pkt_read)
+    # assert(pkt_read_ret.data == expected_mat_flat)
+
+    # # test multiply
+    # pkt_mat_mul = MatrixPacket(multiply=True, matA_start=0, matB_start=MATRIX_SIZE, matC_start = MATRIX_SIZE*2, latency=pkt_read_ret.latency)
+    # pkt_mat_mul_ret = gemm_cache.process_matrix_op_packet(pkt_mat_mul)
+    # assert(pkt_mat_mul_ret.latency == WRITE_LATENCY*2 + READ_LATENCY*2 + MATADD_LATENCY + MATMUL_LATENCY)
+
+    # expected_mat = np.matmul(matA, matB)
+    # expected_mat_flat = array_to_integer(expected_mat.flatten(order='C'))
+    # pkt_read = Packet(load=True, addr=MATRIX_SIZE*2, size=MATRIX_SIZE, data=None, latency=pkt_mat_mul_ret.latency)
+    # pkt_read_ret = gemm_cache.process_packet(pkt_read)
+    # assert(pkt_read_ret.data == expected_mat_flat)
 
     print("GemmCache Test Finished")

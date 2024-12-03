@@ -33,7 +33,8 @@ class Cpu:
             instruction = instructions[self.pc]
             instr_func = self.get_instruction(instruction[0])
             self.time += instr_func(*instruction[1:])
-            self.pc = (self.pc + 1) & self.register_mask
+            self.pc = self.pc + 1
+            # print("PC: ", self.pc)
         print(f"Halted at cycle {self.time}")
 
     def get_instruction(self, instruction: str) -> Callable:
@@ -66,14 +67,14 @@ class Cpu:
         
         ld_resp_pkt = self.memories[memory_idx].process_packet(ld_req_pkt)
         self.registers[dest_register] = ld_resp_pkt.data
-        print(f"LOAD: r{dest_register} <- MEM[{full_address}] = {ld_resp_pkt.data}")
+        # print(f"LOAD: r{dest_register} <- MEM[{full_address}] = {ld_resp_pkt.data}")
         return ld_req_pkt.latency
 
     def store(self, src_register: int, addr_register: int, immediate: int) -> int:
         full_address = (self.registers[addr_register] + immediate) & self.register_mask
         memory_idx,addr = self.translate_addr(full_address)
         st_req_pkt = Packet(False, addr, self.register_bytes, self.registers[src_register], 1)
-        print(f"STORE: MEM[{full_address}] <- r{src_register} ({self.registers[src_register]})")
+        # print(f"STORE: MEM[{full_address}] <- r{src_register} ({self.registers[src_register]})")
         st_resp_pkt = self.memories[memory_idx].process_packet(st_req_pkt)
         return st_resp_pkt.latency
 
@@ -103,21 +104,21 @@ class Cpu:
 
     def add(self, dest_register: int, src_register1: int, src_register2: int) -> int:
         self.registers[dest_register] = (self.registers[src_register1] + self.registers[src_register2]) & self.register_mask
-        print(f"ADD: r{dest_register} = r{src_register1} ({self.registers[src_register1]}) + r{src_register2} ({self.registers[src_register2]}) = {self.registers[dest_register]}")
+        # print(f"ADD: r{dest_register} = r{src_register1} ({self.registers[src_register1]}) + r{src_register2} ({self.registers[src_register2]}) = {self.registers[dest_register]}")
         return self.cpu_latencies.add_latency
 
     def multiply(self, dest_register: int, src_register1: int, src_register2: int) -> int:
         self.registers[dest_register] = (self.registers[src_register1] * self.registers[src_register2]) & self.register_mask
-        print(f"MUL: r{dest_register} = r{src_register1} ({self.registers[src_register1]}) * r{src_register2} ({self.registers[src_register2]}) = {self.registers[dest_register]}")
+        # print(f"MUL: r{dest_register} = r{src_register1} ({self.registers[src_register1]}) * r{src_register2} ({self.registers[src_register2]}) = {self.registers[dest_register]}")
         return self.cpu_latencies.multiply_latency
 
     def branch_if(self, cond_register: int, immediate: int) -> int:
         if self.registers[cond_register] != 0:
-            self.pc = (self.pc + immediate - 1) & self.register_mask # -1 to account for +1 in run_program
+            self.pc = self.pc + immediate - 1 # -1 to account for +1 in run_program
         return self.cpu_latencies.branch_latency
 
     def jump(self, dest_register: int) -> int:
-        self.pc = (self.registers[dest_register] - 1) & self.register_mask # -1 to account for +1 in run_program
+        self.pc = self.registers[dest_register] - 1 # -1 to account for +1 in run_program
         return self.cpu_latencies.jump_latency
 
     def bitwise_or(self, dest_register: int, src_register1: int, src_register2: int) -> int:
@@ -162,7 +163,7 @@ class Cpu:
         memory_idx,dest_addr = self.translate_addr(self.registers[dest_addr_register])
         memory_idx,src1_addr = self.translate_addr(self.registers[src_addr_register1])
         memory_idx,src2_addr = self.translate_addr(self.registers[src_addr_register2])
-        ma_req_pkt = MatrixPacket(True, src1_addr, src2_addr, dest_addr)
+        ma_req_pkt = MatrixPacket(False, src1_addr, src2_addr, dest_addr)
         ma_resp_pkt = self.memories[memory_idx].process_matrix_op_packet(ma_req_pkt)
         return ma_resp_pkt.latency
     

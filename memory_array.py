@@ -44,7 +44,7 @@ class MemoryArray:
 def key_to_addr_size(key) -> tuple[int, int]:
     if isinstance(key, slice):
         addr = key.start
-        size = key.stop - key.start + 1
+        size = key.stop - key.start
     elif isinstance(key, int):
         addr = key
         size = 1

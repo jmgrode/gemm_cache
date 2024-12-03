@@ -58,7 +58,7 @@ class GemmCache(MemObject):
 
     def matrix_add(self, matA_start: int, matB_start: int, matC_start: int) -> None:
         rows = cols = self.matrix_dim
-
+        
         for i in range(rows):
             for j in range(cols):
                 matA_addr = matA_start + (i * cols + j) * self.quantization
@@ -83,7 +83,7 @@ class Cache(MemObject):
         self.tags = {}
         self.dram = dram     
     
-    def process_packet(self, port: int, pkt: Packet) -> Packet:
+    def process_packet(self, pkt: Packet) -> Packet:
         pkt_tag = pkt.addr & (~0xFF)
         cache_addr = pkt.addr & 0xF8
         if pkt.load:
@@ -108,13 +108,16 @@ class Cache(MemObject):
         else:
             if cache_addr in self.tags and (self.tags[cache_addr] == pkt_tag):
                 self.cache.store(cache_addr, pkt.size, pkt.data)
+                # self.dram.process_packet(pkt)
                 return pkt
             elif cache_addr in self.tags and (self.tags[cache_addr] != pkt_tag):
+                
                 evict_data = self.cache.load(cache_addr, self.block_size)
                 evict_pkt = Packet(False, self.tags[cache_addr] + cache_addr, self.block_size, evict_data, 1)
                 self.dram.process_packet(evict_pkt)
                 self.tags.pop(cache_addr)
                 self.cache.store(cache_addr, pkt.size, pkt.data)
+                # self.dram.process_packet(pkt)
                 self.tags[cache_addr]=pkt_tag
                 return pkt
             else:
@@ -126,6 +129,7 @@ class Cache(MemObject):
                     self.dram.process_packet(eviction)
                     self.tags.pop(cache_addr)
                 self.cache.store(cache_addr, pkt.size, pkt.data)
+                # self.dram.process_packet(pkt)
                 self.tags[cache_addr]=pkt_tag
                 return pkt
 
