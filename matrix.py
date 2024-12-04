@@ -1,3 +1,5 @@
+# matrix.py
+
 from cpu import Cpu, CpuLatencies
 from dram import Dram
 from gemm_cache import GemmCache, Cache
@@ -12,13 +14,6 @@ cpu_latencies = CpuLatencies()
 REGISTER_BYTES = 4
 cpu = Cpu([dram, gemm_cache], 32, REGISTER_BYTES, 1, cpu_latencies)
 
-# -----------------------------------------
-# Initialize matrices in DRAM
-# Example matrices:
-# A = [[1, 2], [3, 4]]
-# B = [[5, 6], [7, 8]]
-# Expected C = [[19, 22], [43, 50]]
-
 mat_A = np.random.randint(0, 2, size=(MATRIX_DIM, MATRIX_DIM), dtype=np.int8)
 mat_B = np.random.randint(0, 2, size=(MATRIX_DIM, MATRIX_DIM), dtype=np.int8)
 mat_D = np.random.randint(0, 2, size=(MATRIX_DIM, MATRIX_DIM), dtype=np.int8)
@@ -32,11 +27,6 @@ rows_D, cols_D = mat_D.shape
 matrix_A = mat_A.tolist()
 matrix_B = mat_B.tolist()
 matrix_D = mat_D.tolist()
-
-# Initialize matrices A, B, and C
-# matrix_A = [[1, 2], [3, 4]]  # Example 2x2 matrix
-# matrix_B = [[5, 6], [7, 8]]  # Example 2x2 matrix
-# matrix_C = [[0 for _ in range(cols_B)] for _ in range(rows_A)]  # Result matrix
 
 # Addresses in DRAM
 addr_A = 0

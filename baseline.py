@@ -1,3 +1,5 @@
+# baseline.py
+
 from cpu import Cpu, CpuLatencies
 from dram import Dram
 from gemm_cache import GemmCache, Cache
@@ -117,8 +119,7 @@ program.halt()
 
 cpu.run_program(program)
 
-#TODO: figure out how to build this into the program
-cache.evict_cache()
+cache.evict_cache() # for syncing to memory
 
 matrix_C = []
 for i in range(rows_C):
