@@ -83,67 +83,77 @@ class Cache(MemObject):
         self.tags = {}
         self.dram = dram     
     
+    def evict_cache(self):
+        for block_num, tag in self.tags.items():
+            evict_pkt = Packet(False, tag + block_num, self.block_size, self.cache.load(block_num, self.block_size), 1)
+            self.dram.process_packet(evict_pkt)
+
     def process_packet(self, pkt: Packet) -> Packet:
         pkt_tag = pkt.addr & (~0xFF)
         cache_addr = pkt.addr & 0xF8
         if pkt.load:
             if cache_addr in self.tags and (self.tags[cache_addr] == pkt_tag):
-                print("tags match")
-                print(self.tags)
-                #return self.cache.load(cache_addr, pkt.size)
                 pkt.data = self.cache.load(pkt.addr & (0xFF), pkt.size)
                 return pkt
             elif cache_addr in self.tags:
-                print("tags don't match 1")
-                # print("should hit this once at most")
-                # evict_data = self.cache.load(cache_addr, self.block_size)
-                # evict_pkt = Packet(False, self.tags[cache_addr] + cache_addr, self.block_size, evict_data, 1)
-                # self.dram.process_packet(evict_pkt)
-                # self.tags.pop(cache_addr)
-                ld_size = pkt.size
-                pkt.size = self.block_size
-                new_data = self.dram.process_packet(pkt)
+                # Evict data in set
+                evict_data = self.cache.load(cache_addr, self.block_size)
+                evict_pkt = Packet(False, self.tags[cache_addr] + cache_addr, self.block_size, evict_data, 1)
+                self.dram.process_packet(evict_pkt)
+                self.tags.pop(cache_addr)
+
+                # Ask DRAM for Data block
+                dram_pkt = Packet(pkt.load, pkt.addr & (~0x7), self.block_size, pkt.data, pkt.latency)
+                new_data = self.dram.process_packet(dram_pkt)
+
+                # Store DRAM's block into cache, add to tag array, and return loaded data
                 self.cache.store(new_data.addr & 0xF8, new_data.size, new_data.data)
                 self.tags[cache_addr]=pkt_tag
-                pkt.size = ld_size
                 pkt.data = self.cache.load(pkt.addr & (0xFF), pkt.size)
+                pkt.latency += new_data.latency
                 return pkt
             else:
-                print("tags don't match 2")
-                ld_size = pkt.size
-                pkt.size = self.block_size
-                new_data = self.dram.process_packet(pkt)
+                # Ask DRAM for Data block
+                dram_pkt = Packet(pkt.load, pkt.addr & (~0x7), self.block_size, pkt.data, pkt.latency)
+                new_data = self.dram.process_packet(dram_pkt)
+
+                # Store DRAM's block into cache, add to tag array, and return loaded data
                 self.cache.store(new_data.addr & 0xF8, new_data.size, new_data.data)
                 self.tags[cache_addr]=pkt_tag
-                pkt.size = ld_size
                 pkt.data = self.cache.load(pkt.addr & (0xFF), pkt.size)
+                pkt.latency += new_data.latency
                 return pkt
         else:
             if cache_addr in self.tags and (self.tags[cache_addr] == pkt_tag):
                 self.cache.store(pkt.addr & (0xFF), pkt.size, pkt.data)
-                self.dram.process_packet(pkt)
                 return pkt
             elif cache_addr in self.tags and (self.tags[cache_addr] != pkt_tag):
-                
-                # evict_data = self.cache.load(cache_addr, self.block_size)
-                # evict_pkt = Packet(False, self.tags[cache_addr] + cache_addr, self.block_size, evict_data, 1)
-                # self.dram.process_packet(evict_pkt)
-                # self.tags.pop(cache_addr)
+                # Evict data in set
+                evict_data = self.cache.load(cache_addr, self.block_size)
+                evict_pkt = Packet(False, self.tags[cache_addr] + cache_addr, self.block_size, evict_data, 1)
+                self.dram.process_packet(evict_pkt)
+                self.tags.pop(cache_addr)
+
+                # Ask DRAM for Data block
+                dram_pkt = Packet(True, pkt.addr & (~0x7), self.block_size, pkt.data, pkt.latency)
+                new_data = self.dram.process_packet(dram_pkt)
+
+                # Store DRAM's data in the cache and then store the requested data into cache
+                self.cache.store(new_data.addr & 0xF8, new_data.size, new_data.data)
                 self.cache.store(pkt.addr & (0xFF), pkt.size, pkt.data)
-                self.dram.process_packet(pkt)
                 self.tags[cache_addr]=pkt_tag
+                pkt.latency += new_data.latency
                 return pkt
             else:
-                # Fully associative cache 
-                if len(self.tags) >= self.size:
-                    print("Should never hit this!!!")
-                    # Evict some data if full and write it back to DRAM
-                    eviction = self.cache.load(cache_addr)
-                    self.dram.process_packet(eviction)
-                    self.tags.pop(cache_addr)
+                # Ask DRAM for Data block
+                dram_pkt = Packet(True, pkt.addr & (~0x7), self.block_size, pkt.data, pkt.latency)
+                new_data = self.dram.process_packet(dram_pkt)
+
+                # Store DRAM's data in the cache and then store the requested data into cache
+                self.cache.store(new_data.addr & 0xF8, new_data.size, new_data.data)
                 self.cache.store(pkt.addr & (0xFF), pkt.size, pkt.data)
-                self.dram.process_packet(pkt)
                 self.tags[cache_addr]=pkt_tag
+                pkt.latency += new_data.latency
                 return pkt
 
     def print(self, starting_addr: int) -> None:

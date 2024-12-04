@@ -7,6 +7,7 @@ import numpy as np
 MATRIX_DIM = 4 # matrices are size MATRIX_DIM by MATRIX_DIM
 
 dram = Dram(32768, 100, 10)
+# TODO: Either make Cache support variable size or fix it to a number
 cache = Cache(256, 32768, 8, 1, 1, dram) #TODO: change dram stuff arguments
 cpu_latencies = CpuLatencies()
 REGISTER_BYTES = 1
@@ -116,6 +117,9 @@ program.halt()
 
 cpu.run_program(program)
 
+#TODO: figure out how to build this into the program
+cache.evict_cache()
+
 matrix_C = []
 for i in range(rows_C):
     row = []
@@ -135,5 +139,5 @@ else:
 # cpu.print_registers()
 # for addr,data in cache.cache.array.items():
 #     dram.memory[addr] = data
-# dram.print(0)
-cpu.print_memory()
+dram.print(0)
+#cpu.print_memory()
