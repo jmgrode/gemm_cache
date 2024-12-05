@@ -43,6 +43,8 @@ class Cpu:
         instruction_dict = {
             "load": self.load,
             "store": self.store,
+            "load_byte": self.load_byte,
+            "store_byte": self.store_byte,
             "move_memory": self.move_memory,
             "move": self.move,
             "add": self.add,
@@ -77,6 +79,25 @@ class Cpu:
         memory_idx,addr = self.translate_addr(full_address)
         st_req_pkt = Packet(False, addr, self.register_bytes, self.registers[src_register], 1)
         # print(f"STORE: MEM[{full_address}] <- r{src_register} ({self.registers[src_register]})")
+        st_resp_pkt = self.memories[memory_idx].process_packet(st_req_pkt)
+        return st_resp_pkt.latency
+    
+    def load_byte(self, dest_register: int, addr_register: int, immediate: int) -> int:
+        # unsigned load into lowest byte of register
+        full_address = (self.registers[addr_register] + immediate) & self.register_mask
+        memory_idx,addr = self.translate_addr(full_address)
+        ld_req_pkt = Packet(True, addr, 1, None, 1)
+        
+        ld_resp_pkt = self.memories[memory_idx].process_packet(ld_req_pkt)
+        self.registers[dest_register] = ld_resp_pkt.data & 0xff
+        return ld_req_pkt.latency
+
+    def store_byte(self, src_register: int, addr_register: int, immediate: int) -> int:
+        # store lowest byte of register
+        full_address = (self.registers[addr_register] + immediate) & self.register_mask
+        memory_idx,addr = self.translate_addr(full_address)
+        st_req_pkt = Packet(False, addr, 1, self.registers[src_register] & 0xff, 1)
+
         st_resp_pkt = self.memories[memory_idx].process_packet(st_req_pkt)
         return st_resp_pkt.latency
 

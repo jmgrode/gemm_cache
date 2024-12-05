@@ -1,7 +1,7 @@
 # packet.py
 
 class Packet:
-    def __init__(self, load: bool, addr: int, size: int = 0, data: None = int, latency: int = 0) -> None:
+    def __init__(self, load: bool, addr: int, size: int = 0, data: int = None, latency: int = 0) -> None:
         self.load = load # whether the packet is for a load or store
         self.addr = addr
         self.size = size # size in bytes

@@ -12,7 +12,7 @@ dram = Dram(32768, 100, 10)
 # TODO: Either make Cache support variable size or fix it to a number
 cache = Cache(256, 32768, 8, 1, 1, dram) #TODO: change dram stuff arguments
 cpu_latencies = CpuLatencies()
-REGISTER_BYTES = 1
+REGISTER_BYTES = 4
 cpu = Cpu([cache], 32, REGISTER_BYTES, -1, cpu_latencies)
 # cpu = Cpu([dram], 32, REGISTER_BYTES, -1, cpu_latencies)
 
@@ -82,37 +82,37 @@ for i in range(rows_A):  # Iterate over rows of A
     for j in range(cols_B):  # Iterate over columns of B
         # Initialize C[i][j] to 0
         program.add_immediate(0, 0, 0)  # r0 = 0
-        program.store(0, 1, addr_C + (i * cols_B + j))  # Store r0 -> C[i][j]
+        program.store_byte(0, 1, addr_C + (i * cols_B + j))  # Store r0 -> C[i][j]
 
         for k in range(cols_A):  # Iterate over shared dimension
             # Load A[i][k] and B[k][j]
-            program.load(2, 1, addr_A + (i * cols_A + k))  # r2 = A[i][k]
-            program.load(3, 1, addr_B + (k * cols_B + j))  # r3 = B[k][j]
+            program.load_byte(2, 1, addr_A + (i * cols_A + k))  # r2 = A[i][k]
+            program.load_byte(3, 1, addr_B + (k * cols_B + j))  # r3 = B[k][j]
 
             # Multiply A[i][k] * B[k][j]
             program.multiply(4, 2, 3)  # r4 = r2 * r3
 
             # Load C[i][j]
-            program.load(5, 1, addr_C + (i * cols_B + j))  # r5 = C[i][j]
+            program.load_byte(5, 1, addr_C + (i * cols_B + j))  # r5 = C[i][j]
 
             # Add product to C[i][j]
             program.add(5, 5, 4)  # r5 = r5 + r4
 
             # Store result back to C[i][j]
-            program.store(5, 1, addr_C + (i * cols_B + j))
+            program.store_byte(5, 1, addr_C + (i * cols_B + j))
 
 # Load and compute matrix add
 for i in range(rows_C):  # Iterate over rows of C
     for j in range(cols_C):  # Iterate over columns of C
         # Load C[i][j] and D[i][j]
-        program.load(2, 1, addr_C + (i * cols_C + j))  # r2 = C[i][j]
-        program.load(3, 1, addr_D + (i * cols_D + j))  # r3 = D[i][j]
+        program.load_byte(2, 1, addr_C + (i * cols_C + j))  # r2 = C[i][j]
+        program.load_byte(3, 1, addr_D + (i * cols_D + j))  # r3 = D[i][j]
 
         # Add C[i][j] + D[i][j]
         program.add(4, 2, 3)  # r4 = r2 + r3
 
         # Store result back to C[i][j]
-        program.store(4, 1, addr_C + (i * cols_C + j))
+        program.store_byte(4, 1, addr_C + (i * cols_C + j))
 
 program.halt()
 

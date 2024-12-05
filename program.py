@@ -63,6 +63,12 @@ class Program:
     def store(self, src_register: int, addr_register: int, immediate: int) -> None:
         self.instructions.append(("store", src_register, addr_register, immediate))
 
+    def load_byte(self, dest_register: int, addr_register: int, immediate: int) -> None:
+        self.instructions.append(("load_byte", dest_register, addr_register, immediate))
+        
+    def store_byte(self, src_register: int, addr_register: int, immediate: int) -> None:
+        self.instructions.append(("store_byte", src_register, addr_register, immediate))
+
     def move_memory(self, src_addr_register: int, dest_addr_register: int, size_register: int) -> None:
         self.instructions.append(("move_memory", src_addr_register, dest_addr_register, size_register))
 
