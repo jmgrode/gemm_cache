@@ -130,9 +130,9 @@ print("Expected:\n", mat_C)
 print("Actual:\n", np.array(matrix_C))
 
 if np.array_equal(mat_C, np.array(matrix_C)):
-    print("Matmul is correct")
+    print("GeMM is correct")
 else:
-    print("Matmul is not correct")
+    print("GeMM is not correct")
 
 cpu.print_registers()
 
