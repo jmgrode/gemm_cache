@@ -81,8 +81,7 @@ program = Program(REGISTER_BYTES)
 for i in range(rows_A):  # Iterate over rows of A
     for j in range(cols_B):  # Iterate over columns of B
         # Initialize C[i][j] to 0
-        program.add_immediate(0, 0, 0)  # r0 = 0
-        program.store_byte(0, 1, addr_C + (i * cols_B + j))  # Store r0 -> C[i][j]
+        program.add_immediate(5, 0, 0)  # r5 = 0
 
         for k in range(cols_A):  # Iterate over shared dimension
             # Load A[i][k] and B[k][j]
@@ -92,14 +91,11 @@ for i in range(rows_A):  # Iterate over rows of A
             # Multiply A[i][k] * B[k][j]
             program.multiply(4, 2, 3)  # r4 = r2 * r3
 
-            # Load C[i][j]
-            program.load_byte(5, 1, addr_C + (i * cols_B + j))  # r5 = C[i][j]
-
             # Add product to C[i][j]
             program.add(5, 5, 4)  # r5 = r5 + r4
 
-            # Store result back to C[i][j]
-            program.store_byte(5, 1, addr_C + (i * cols_B + j))
+        # Store result back to C[i][j]
+        program.store_byte(5, 1, addr_C + (i * cols_B + j))
 
 # Load and compute matrix add
 for i in range(rows_C):  # Iterate over rows of C
