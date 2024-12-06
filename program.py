@@ -24,25 +24,27 @@ class Program:
             if instr[0] == "label_jump":
                 label_jumps.append(instr_addr)
         for label in labels.keys():
-            self.instructions.remove({"label", label})
+            self.instructions.remove(("label", label))
         for jump_addr in label_jumps:
             assert self.instructions[jump_addr][0] == "label_jump"
             available_register = self.instructions[jump_addr][1]
             label = self.instructions[jump_addr][2]
             dest_addr = labels[label]
-            left_half_addr = (dest_addr >> (self.register_bytes/2)) & self.half_register_mask
+            left_half_addr = (dest_addr >> (self.register_bytes//2)) & self.half_register_mask
             right_half_addr = dest_addr & self.half_register_mask
             labeled_jump_to_jump_instrs = [
                 ("move", available_register, left_half_addr),
-                ("logical_shift_left", available_register, available_register, self.register_bytes*8/2),
+                ("logical_shift_left", available_register, available_register, self.register_bytes*8//2),
                 ("move", available_register, right_half_addr)
             ]
+            self.instructions[jump_addr] = ("jump", available_register)
             self.instructions[jump_addr:jump_addr] = labeled_jump_to_jump_instrs
         for branch_addr in label_branch_ifs:
             assert self.instructions[branch_addr][0] == "label_branch_if"
-            label = self.instructions[branch_addr][2]
-            self.instructions[branch_addr][2] = labels[self.instructions[branch_addr][2]]
-		#TODO: test this function (test whether labels work)
+            branch = list(self.instructions[branch_addr])
+            branch[0] = "branch_if"
+            branch[2] = labels[branch[2]] - branch_addr
+            self.instructions[branch_addr] = tuple(branch)
         return self.instructions
 
     def halt(self) -> None:
