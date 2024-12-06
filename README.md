@@ -4,8 +4,8 @@ Cache Size: 32KB
 Workload Sizes(size of matrices for matmul and matadd): 4KB, 8KB
 # TODO: enable workloads bigger than gemm_cache matrix size
 Area Heuristics: Number of adders, multipliers, flip flops, comparators, sense amps, other peripherals specific to scratchpad mem, SRAM memory overhead based on number of cells?
-GeMMCache Area Heuristics: n processing elements (1 multiplier and 1 adder, 8 flip flops) for each entry of the output matrix
-GeMMCache Matmul Latency: 8\*d cycles where d is height of matrix
+GemmCache Area Heuristics: n processing elements (1 8-bit multiplier and 1 8-bit adder, 8 flip flops) for each entry of the output matrix
+GemmCache Matmul Latency: 2(3d-1) cycles where d is height of the square matrix
 
 ## Components Overview
 

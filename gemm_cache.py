@@ -5,14 +5,29 @@ from memory import MemObject
 from memory_array import MemoryArray
 from dram import Dram
 
+class GemmCacheLatencies:
+    def __init__(self, matrix_dim: int) -> None:
+        # base latencies
+        self.read_latency = 1
+        self.write_latency = 1
+        int8_add_latency = 1
+        int8_multiply_latency = 1
+        
+        # intermediate calculations
+        processing_element_latency = int8_add_latency + int8_multiply_latency
+        systolic_array_latency = processing_element_latency * (3*matrix_dim - 1)
+
+        self.matadd_latency = self.read_latency + int8_add_latency + self.write_latency
+        self.matmul_latency = self.read_latency + systolic_array_latency + self.write_latency
+
 class GemmCache(MemObject):
-    def __init__(self, matrix_dim: int, num_matrices: int, read_latency: int, write_latency: int, matmul_latency:int, matadd_latency: int, bytes_per_element: int = 1) -> None:
+    def __init__(self, matrix_dim: int, num_matrices: int, gemm_cache_latencies: GemmCacheLatencies, bytes_per_element: int = 1) -> None:
         size = matrix_dim * matrix_dim * num_matrices # size is also addr_range
-        super().__init__(size, size, read_latency, write_latency)
+        super().__init__(size, size, gemm_cache_latencies.read_latency, gemm_cache_latencies.write_latency)
         self.matrix_dim = matrix_dim
         self.num_matrices = num_matrices
-        self.matmul_latency = matmul_latency
-        self.matadd_latency = matadd_latency
+        self.matmul_latency = gemm_cache_latencies.matmul_latency
+        self.matadd_latency = gemm_cache_latencies.matadd_latency
         self.matrices = MemoryArray(matrix_dim * matrix_dim * num_matrices)
         self.quantization = bytes_per_element
 

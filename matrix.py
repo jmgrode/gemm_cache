@@ -2,14 +2,15 @@
 
 from cpu import Cpu, CpuLatencies
 from dram import Dram
-from gemm_cache import GemmCache, Cache
+from gemm_cache import GemmCache, GemmCacheLatencies
 from program import Program
 import numpy as np
 
 MATRIX_DIM = 4 # matrices are size MATRIX_DIM by MATRIX_DIM
 
 dram = Dram(100000, 100, 10)
-gemm_cache = GemmCache(matrix_dim=MATRIX_DIM, num_matrices=4, read_latency=10, write_latency=10, matmul_latency=5, matadd_latency=3)
+gemm_cache_latencies = GemmCacheLatencies(matrix_dim=MATRIX_DIM)
+gemm_cache = GemmCache(matrix_dim=MATRIX_DIM, num_matrices=4, gemm_cache_latencies=gemm_cache_latencies)
 cpu_latencies = CpuLatencies()
 REGISTER_BYTES = 4
 cpu = Cpu([dram, gemm_cache], 32, REGISTER_BYTES, 1, cpu_latencies)

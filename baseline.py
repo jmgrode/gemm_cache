@@ -2,7 +2,7 @@
 
 from cpu import Cpu, CpuLatencies
 from dram import Dram
-from gemm_cache import GemmCache, Cache
+from gemm_cache import Cache
 from program import Program
 import numpy as np
 
