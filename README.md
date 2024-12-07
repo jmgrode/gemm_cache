@@ -1,176 +1,238 @@
-# gemm_cache
+# **README: GeMM Simulation Framework**
 
-Cache Size: 32KB
-Workload Sizes(size of matrices for matmul and matadd): 4KB, 8KB
-# TODO: enable workloads bigger than gemm_cache matrix size
-Area Heuristics: Number of adders, multipliers, flip flops, comparators, sense amps, other peripherals specific to scratchpad mem, SRAM memory overhead based on number of cells?
-GemmCache Area Heuristics: 1 8-bit adder and 1 processing element (1 8-bit multiplier and 1 8-bit adder, 8 flip flops) for each entry of the output matrix
-GemmCache Matmul Latency: 2(3d-1) cycles where d is height of the square matrix
+## **Overview**
+This project simulates a General Matrix Multiply (GeMM) operation using a custom-designed CPU, memory hierarchy, and instruction set architecture (ISA). The framework includes support for DRAM, a GemmCache for optimizing matrix operations, and a programmable CPU. It facilitates GeMM operations and provides a fully programmable environment for running custom programs that involve memory and arithmetic operations.
 
-## Components Overview
+The framework is implemented in Python and is designed for educational and experimental purposes, enabling users to explore hardware design principles and low-level programming concepts.
 
-### CPU
-CPU accepts multiple parameters:
-- Configurable number of registers and register sizes
-- Basic arithmetic operations (add, multiply)
-- Memory operations (load, store)
-- Branch and jump instructions
-- Logical operations (bitwise operations, shifts)
-- Matrix operations with GemmCache
+---
 
-```python
-# CPU initialization
-cpu_latencies = CpuLatencies()  # Define operation latencies
-cpu = Cpu(
-    memories=[dram, gemm_cache],  # List of memory components
-    num_registers=32,             # Number of registers
-    register_bytes=4,             # Size of each register
-    gemm_port=1,                 # Port for GemmCache (-1 if not used)
-    cpu_latencies=cpu_latencies
-)
-```
+## **Key Components**
 
-### DRAM
-Main memory with configurable size and latencies:
-```python
-dram = Dram(
-    size=32768,           # Total memory size
-    read_latency=100,     # Read latency cycles
-    write_latency=10,     # Write latency cycles
-    burst_size=64        # Optional: Burst size for transfers
-)
-```
+### 1. **DRAM**
+- **Class:** `Dram`
+- **Purpose:** Simulates main memory, allowing storage and retrieval of data with configurable latencies and burst sizes.
+- **Features:**
+  - Load and store operations.
+  - Configurable memory size, read latency, write latency, and burst size.
+  - Out-of-bounds access handling.
+  - Memory dump functionality for debugging.
 
-### Traditional Cache
-Direct-mapped cache with DRAM backing:
-```python
-cache = Cache(
-    size=256,            # Cache size in bytes
-    addr_range=32768,    # Address range covered
-    block_size=8,        # Cache block size
-    read_latency=1,      # Cache read latency
-    write_latency=1,     # Cache write latency
-    dram=dram           # Backing DRAM
-)
-```
+---
 
-### GemmCache
-GeMM cache for matrix operations:
-```python
-gemm_cache = GemmCache(
-    matrix_dim=4,        # Matrix dimension (NxN)
-    num_matrices=4,      # Number of matrices that can be stored
-    read_latency=10,     # Read latency cycles
-    write_latency=10,    # Write latency cycles
-    matmul_latency=5,    # Matrix multiply latency
-    matadd_latency=3,    # Matrix add latency
-    bytes_per_element=1  # Size of each matrix element
-)
-```
+### 2. **GemmCache**
+- **Class:** `GemmCache`
+- **Purpose:** Simulates a cache specifically designed for matrix operations like multiplication and addition.
+- **Features:**
+  - Optimized for matrix operations (`matrix_multiply`, `matrix_add`).
+  - Configurable dimensions, number of matrices, and operation latencies.
+  - Directly interfaces with DRAM.
+  - Handles both scalar and matrix data through `Packet` and `MatrixPacket` objects.
 
-## Creating Programs
+---
 
-Use the Program class to create instruction sequences:
+### 3. **Cache**
+- **Class:** `Cache`
+- **Purpose:** General-purpose cache for scalar memory operations.
+- **Features:**
+  - Implements a simple block-based cache with eviction logic.
+  - Supports both read and write operations.
+  - Interfaces with DRAM for cache misses.
+  - Eviction logic to ensure cache coherence.
 
-```python
-program = Program(register_bytes=4)
+---
 
-# Arithmetic Operations
-program.add(dest_reg, src_reg1, src_reg2)
-program.add_immediate(dest_reg, src_reg, immediate)
-program.multiply(dest_reg, src_reg1, src_reg2)
+### 4. **CPU**
+- **Class:** `Cpu`
+- **Purpose:** Simulates a programmable CPU capable of running a custom instruction set.
+- **Features:**
+  - Configurable number of registers and register size.
+  - Direct interface with memory objects (e.g., DRAM, GemmCache).
+  - Support for custom instructions, including arithmetic, bitwise, memory, and matrix operations.
+  - Tracks program execution time (cycles).
 
-# Memory Operations
-program.load(dest_reg, addr_reg, immediate)
-program.store(src_reg, addr_reg, immediate)
-program.move_memory(src_addr_reg, dest_addr_reg, size_reg)
-program.move(dest_reg, immediate)
+---
 
-# Control Flow
-program.branch_if(cond_reg, immediate)     # Branch if cond_reg != 0
-program.jump(dest_reg)                     # Jump to address in register
+### 5. **Program**
+- **Class:** `Program`
+- **Purpose:** Encapsulates instructions to be executed by the CPU.
+- **Features:**
+  - Customizable instruction set.
+  - Labels and branching for flow control.
+  - Support for memory, arithmetic, and matrix operations.
+  - Converts instructions into a list for execution by the CPU.
 
-# Logical Operations
-program.bitwise_or(dest_reg, src_reg1, src_reg2)
-program.bitwise_and(dest_reg, src_reg1, src_reg2)
-program.bitwise_xor(dest_reg, src_reg1, src_reg2)
-program.bitwise_nor(dest_reg, src_reg1, src_reg2)
-program.bitwise_not(dest_reg, src_reg)
-program.logical_shift_left(dest_reg, value_reg, shift_size)
-program.logical_shift_right(dest_reg, value_reg, shift_size)
+---
 
-# Matrix Operations (GemmCache)
-program.matrix_multiply(dest_addr_reg, src1_addr_reg, src2_addr_reg)
-program.matrix_add(dest_addr_reg, src1_addr_reg, src2_addr_reg)
+### 6. **MemoryArray**
+- **Class:** `MemoryArray`
+- **Purpose:** Implements a contiguous byte-addressable memory for use in DRAM, caches, and matrix storage.
+- **Features:**
+  - Supports load, store, and delete operations.
+  - Handles both scalar and multi-byte data.
 
-program.halt()  # End program
-```
+---
 
-## Example Programs
+### 7. **Packets**
+- **Classes:** `Packet`, `MatrixPacket`
+- **Purpose:** Encapsulate memory and matrix operation requests.
+- **Features:**
+  - Scalar memory access (`Packet`).
+  - Matrix operation requests (`MatrixPacket`).
 
-### 1. Matrix Multiply using Traditional Cache
-```python
-program = Program(REGISTER_BYTES=1)
+---
 
-# Matrix multiplication loop
-for i in range(rows_A):
-    for j in range(cols_B):
-        program.add_immediate(0, 0, 0)  # Clear accumulator
-        for k in range(cols_A):
-            # Load matrix elements
-            program.load(2, 1, addr_A + (i * cols_A + k))
-            program.load(3, 1, addr_B + (k * cols_B + j))
-            # Multiply and accumulate
-            program.multiply(4, 2, 3)
-            program.add(0, 0, 4)
-        # Store result
-        program.store(0, 1, addr_C + (i * cols_B + j))
+## **Instructions Overview**
 
+### Supported Instructions
+| **Instruction**      | **Purpose**                                  | **Example**                        |
+|-----------------------|----------------------------------------------|------------------------------------|
+| `load`               | Load data from memory to register            | `load(1, 0, 100)`                 |
+| `store`              | Store register data to memory                | `store(1, 0, 100)`                |
+| `move`               | Move immediate value to register             | `move(1, 42)`                     |
+| `add`                | Add two registers and store result           | `add(3, 1, 2)`                    |
+| `multiply`           | Multiply two registers and store result      | `multiply(3, 1, 2)`               |
+| `matrix_multiply`    | Perform matrix multiplication in cache       | `matrix_multiply(1, 2, 3)`        |
+| `matrix_add`         | Perform matrix addition in cache             | `matrix_add(1, 2, 3)`             |
+| `halt`               | Stop program execution                       | `halt()`                          |
+
+---
+
+## **Usage Guide**
+
+### Setting Up
+
+1. **Dependencies**
+   Ensure Python 3.7+ is installed along with `numpy` for matrix operations.
+
+   pip install numpy
+
+2. **Directory Structure**
+   .
+   ├── baseline.py
+   ├── cache_test.py
+   ├── cpu.py
+   ├── dram.py
+   ├── gemm_cache.py
+   ├── gemm_cache_test.py
+   ├── large_matrix.py
+   ├── matrix.py
+   ├── memory.py
+   ├── memory_array.py
+   ├── packet.py
+   ├── program.py
+   └── simple.py
+
+
+3. **Run Examples**
+Choose a file based on your use case. For example:
+- `baseline.py` for initializing matrices and validating GeMM operations.
+- `simple.py` for running a simple program to demonstrate basic CPU operations.
+- `large_matrix.py` for testing operations on large matrices.
+- `gemm_cache_test.py` or `cache_test.py` for unit testing specific components.
+
+python baseline.py
+
+---
+
+### Sample Workflow: Matrix Multiply and Add
+
+1. **Initialize DRAM**
+Define matrices `A`, `B`, and `D` in any example script (e.g., `baseline.py`).
+
+mat_A = np.random.randint(0, 2, size=(4, 4), dtype=np.int8)
+mat_B = np.random.randint(0, 2, size=(4, 4), dtype=np.int8)
+mat_D = np.random.randint(0, 2, size=(4, 4), dtype=np.int8)
+
+2. **Create a Program**
+Define operations to:
+- Load matrices into GemmCache.
+- Perform matrix multiplication and addition.
+- Store the result back into DRAM.
+
+program = Program(REGISTER_BYTES)
+program.matrix_multiply(1, 2, 3)
+program.matrix_add(1, 2, 1)
 program.halt()
-```
 
-### 2. Matrix Operations using GemmCache
-```python
-program = Program(REGISTER_BYTES=4)
+3. **Run the Program**
+Execute the program using the CPU.
 
-# Load matrices into GemmCache
-program.move_memory(dram_addr_a, cache_addr_a, matrix_size)
-program.move_memory(dram_addr_b, cache_addr_b, matrix_size)
+cpu.run_program(program)
 
-# Perform matrix multiply
-program.matrix_multiply(cache_addr_c, cache_addr_a, cache_addr_b)
+4. **Validate Results**
+Compare the computed result with the expected output.
 
-# Store result back to DRAM
-program.move_memory(cache_addr_c, dram_addr_c, matrix_size)
+assert np.array_equal(mat_C, np.array(matrix_C))
 
-program.halt()
-```
+---
 
-## Debugging
+### Debugging Tools
 
-```python
-# CPU State
-cpu.print_registers()          # Show register contents
-cpu.print_memory()            # Show all memory contents
+- **`print_registers()`**: Prints the current state of CPU registers.
+- **`print_memory()`**: Dumps the state of memory for debugging.
+- **`Matrix Dumps`**: Verify the state of matrices in DRAM and GemmCache.
 
-# Memory Contents
-dram.print(0)                # Print DRAM from address 0
-cache.print(0)              # Print cache contents
-gemm_cache.print_memory(0)  # Print GemmCache contents
+---
 
-# Cache Management
-cache.evict_cache()         # Write cache contents to DRAM
-```
+## **Extending the Framework**
 
-## Performance Monitoring
+1. **Add Instructions**
+Define new instructions in `Cpu` and add their logic in `Program`.
 
-The simulator tracks cycles for:
-- Individual instructions (defined in CpuLatencies)
-- Memory operations (read/write latencies)
-- Matrix operations (matmul/matadd latencies)
-- Total program execution time
+2. **Optimize GemmCache**
+Modify `GemmCache` for additional optimizations like tiling or multi-threading.
 
-```python
-# Run program and get performance
-cpu.run_program(program)  # Prints final cycle count
-```
+3. **Integrate More Complex Workloads**
+Extend or create new example scripts for more sophisticated matrix operations.
+
+---
+
+## **Known Limitations**
+
+- Assumes perfect alignment of matrix dimensions.
+- Limited support for variable-sized cache blocks.
+- Designed for single-threaded simulation only.
+
+---
+
+---
+
+## **System Specifications and Heuristics**
+
+### 1. **Cache**
+- **Cache Size:** 32KB
+- **Workload Sizes:** 
+  - 4KB
+  - 8KB
+- **Note:** Currently, workloads larger than the GemmCache matrix size are not supported. This is a planned feature.
+
+---
+
+### 2. **Area Heuristics**
+- **Components Considered:**
+  - Number of adders.
+  - Number of multipliers.
+  - Number of flip-flops.
+  - Number of comparators.
+  - Number of sense amplifiers.
+  - Other peripherals specific to scratchpad memory.
+  - SRAM memory overhead based on the number of cells.
+
+---
+
+### 3. **GemmCache**
+- **Area Heuristics:**
+  - Each entry of the output matrix uses:
+    - 1 8-bit adder.
+    - 1 processing element, consisting of:
+      - 1 8-bit multiplier.
+      - 1 8-bit adder.
+      - 8 flip-flops.
+- **Matrix Multiply Latency:** 
+  - \(2 \times (3d - 1)\) cycles, where \(d\) is the height of the square matrix.
+
+---
+
+## **Acknowledgments**
+This project is a simplified educational tool for understanding low-level CPU and memory interactions, inspired by hardware simulation and system design principles.
