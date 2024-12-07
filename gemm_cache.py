@@ -47,6 +47,9 @@ class GemmCache(MemObject):
         return pkt
     
     def process_matrix_op_packet(self, pkt: MatrixPacket) -> MatrixPacket:
+        assert pkt.matA_start % (self.matrix_dim * self.matrix_dim) == 0
+        assert pkt.matB_start % (self.matrix_dim * self.matrix_dim) == 0
+        assert pkt.matC_start % (self.matrix_dim * self.matrix_dim) == 0
         if pkt.multiply:
             self.matrix_multiply(pkt.matA_start, pkt.matB_start, pkt.matC_start)
             pkt.latency += self.matmul_latency
