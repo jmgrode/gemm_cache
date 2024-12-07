@@ -14,7 +14,6 @@ cache = Cache(256, 32768, 8, 1, 1, dram) #TODO: change dram stuff arguments
 cpu_latencies = CpuLatencies()
 REGISTER_BYTES = 4
 cpu = Cpu([cache], 32, REGISTER_BYTES, -1, cpu_latencies)
-# cpu = Cpu([dram], 32, REGISTER_BYTES, -1, cpu_latencies)
 
 # -----------------------------------------
 # Initialize matrices in DRAM
@@ -122,7 +121,9 @@ for i in range(rows_C):
     row = []
     for j in range(cols_C):
         value = dram.memory.load(addr_C + (i * cols_C + j), 1)
-        row.append(value)
+        if value > 127:
+            value -= 256
+        row.append(np.int8(value))
     matrix_C.append(row)
 
 print("Expected:\n", mat_C)
