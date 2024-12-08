@@ -8,9 +8,10 @@ import numpy as np
 
 MATRIX_DIM = 4 # matrices are size MATRIX_DIM by MATRIX_DIM
 
-dram = Dram(100000, 0, 100, 10)
+dram_size = MATRIX_DIM * MATRIX_DIM *  5
+dram = Dram(dram_size, 0, 100, 10)
 gemm_cache_latencies = GemmCacheLatencies(matrix_dim=MATRIX_DIM)
-gemm_cache = GemmCache(matrix_dim=MATRIX_DIM, num_matrices=4, addr_start=1000000, gemm_cache_latencies=gemm_cache_latencies)
+gemm_cache = GemmCache(matrix_dim=MATRIX_DIM, num_matrices=4, addr_start=dram_size, gemm_cache_latencies=gemm_cache_latencies)
 cpu_latencies = CpuLatencies()
 REGISTER_BYTES = 4
 cpu = Cpu([dram, gemm_cache], 32, REGISTER_BYTES, 1, cpu_latencies)
@@ -36,7 +37,7 @@ addr_C = addr_B + rows_B * cols_B
 addr_D = addr_C + rows_C * cols_C
 
 # GemmCache addresses (starting at 1000)
-cache_addr_A = 100000
+cache_addr_A = dram_size
 cache_addr_B = cache_addr_A + rows_A * cols_A
 cache_addr_C = cache_addr_B + rows_B * cols_B
 cache_addr_D = cache_addr_C + rows_C * cols_C
