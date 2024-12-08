@@ -6,12 +6,13 @@ from memory_array import MemoryArray
 import math
 
 class Dram(MemObject):
-    def __init__(self, size: int, read_latency: int, write_latency: int, burst_size: int = 64) -> None:
+    def __init__(self, size: int, addr_start: int, read_latency: int, write_latency: int, burst_size: int = 64) -> None:
         super().__init__(size, size, read_latency, write_latency)
         assert burst_size > 0, "Burst size must be greater than 0"
 
         self.memory = MemoryArray(size)
         self.mem_size = size
+        self.addr_range = addr_start + size
         self.read_latency = read_latency
         self.write_latency = write_latency
         self.burst_size = burst_size

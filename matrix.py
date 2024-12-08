@@ -8,9 +8,9 @@ import numpy as np
 
 MATRIX_DIM = 4 # matrices are size MATRIX_DIM by MATRIX_DIM
 
-dram = Dram(100000, 100, 10)
+dram = Dram(100000, 0, 100, 10)
 gemm_cache_latencies = GemmCacheLatencies(matrix_dim=MATRIX_DIM)
-gemm_cache = GemmCache(matrix_dim=MATRIX_DIM, num_matrices=4, gemm_cache_latencies=gemm_cache_latencies)
+gemm_cache = GemmCache(matrix_dim=MATRIX_DIM, num_matrices=4, addr_start=1000000, gemm_cache_latencies=gemm_cache_latencies)
 cpu_latencies = CpuLatencies()
 REGISTER_BYTES = 4
 cpu = Cpu([dram, gemm_cache], 32, REGISTER_BYTES, 1, cpu_latencies)
@@ -54,23 +54,23 @@ for i in range(rows_D):
     for j in range(cols_D):
         dram.set_value(addr_D + (i * cols_D + j), 1, matrix_D[i][j])
 
-print("Matrix A in DRAM:")
-for i in range(rows_A):
-    for j in range(cols_A):
-        value = dram.memory.load(addr_A + (i * cols_A + j), 1)
-        print(f"A[{i}][{j}] = {value}")
+# print("Matrix A in DRAM:")
+# for i in range(rows_A):
+#     for j in range(cols_A):
+#         value = dram.memory.load(addr_A + (i * cols_A + j), 1)
+#         print(f"A[{i}][{j}] = {value}")
 
-print("Matrix B in DRAM:")
-for i in range(rows_B):
-    for j in range(cols_B):
-        value = dram.memory.load(addr_B + (i * cols_B + j), 1)
-        print(f"B[{i}][{j}] = {value}")
+# print("Matrix B in DRAM:")
+# for i in range(rows_B):
+#     for j in range(cols_B):
+#         value = dram.memory.load(addr_B + (i * cols_B + j), 1)
+#         print(f"B[{i}][{j}] = {value}")
 
-print("Matrix D in DRAM:")
-for i in range(rows_D):
-    for j in range(cols_D):
-        value = dram.memory.load(addr_D + (i * cols_D + j), 1)
-        print(f"D[{i}][{j}] = {value}")
+# print("Matrix D in DRAM:")
+# for i in range(rows_D):
+#     for j in range(cols_D):
+#         value = dram.memory.load(addr_D + (i * cols_D + j), 1)
+#         print(f"D[{i}][{j}] = {value}")
 
 # Create the program for matrix multiplication
 program = Program(REGISTER_BYTES)

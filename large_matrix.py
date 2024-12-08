@@ -2,16 +2,18 @@
 
 from cpu import Cpu, CpuLatencies
 from dram import Dram
-from gemm_cache import GemmCache, Cache
+from gemm_cache import GemmCache, GemmCacheLatencies
 from program import Program
 import numpy as np
 
 
-MATRIX_DIM = 258
-TILE_DIM = 50
+MATRIX_DIM = 25
+TILE_DIM = 5
 
-dram = Dram(100000, 100, 10)
-gemm_cache = GemmCache(matrix_dim=TILE_DIM, num_matrices=4, read_latency=10, write_latency=10, matmul_latency=5, matadd_latency=3)
+dram_size = MATRIX_DIM * MATRIX_DIM * 5
+dram = Dram(dram_size, 0, 100, 10)
+gemm_cache_latencies = GemmCacheLatencies(matrix_dim=TILE_DIM)
+gemm_cache = GemmCache(matrix_dim=TILE_DIM, num_matrices=4, addr_start=dram_size, gemm_cache_latencies=gemm_cache_latencies)
 cpu_latencies = CpuLatencies()
 REGISTER_BYTES = 4
 cpu = Cpu([dram, gemm_cache], 32, REGISTER_BYTES, 1, cpu_latencies)
@@ -37,7 +39,7 @@ addr_C = addr_B + MATRIX_DIM * MATRIX_DIM
 addr_D = addr_C + MATRIX_DIM * MATRIX_DIM
 
 # GemmCache addresses
-cache_addr_A = 100000
+cache_addr_A = dram_size
 cache_addr_B = cache_addr_A + TILE_DIM * TILE_DIM
 cache_addr_C = cache_addr_B + TILE_DIM * TILE_DIM
 cache_addr_D = cache_addr_C + TILE_DIM * TILE_DIM
@@ -55,68 +57,66 @@ for i in range(rows_D):
     for j in range(cols_D):
         dram.set_value(addr_D + (i * cols_D + j), 1, matrix_D[i][j])
 
-print("Matrix A in DRAM:")
-for i in range(rows_A):
-    for j in range(cols_A):
-        value = dram.memory.load(addr_A + (i * cols_A + j), 1)
-        print(f"A[{i}][{j}] = {value}")
-
-print("Matrix B in DRAM:")
-for i in range(rows_B):
-    for j in range(cols_B):
-        value = dram.memory.load(addr_B + (i * cols_B + j), 1)
-        print(f"B[{i}][{j}] = {value}")
-
-print("Matrix D in DRAM:")
-for i in range(rows_D):
-    for j in range(cols_D):
-        value = dram.memory.load(addr_D + (i * cols_D + j), 1)
-        print(f"D[{i}][{j}] = {value}")
-
 # Create the program for matrix multiplication
 program = Program(REGISTER_BYTES)
 
+def move_from_dram_to_cache(program, dram_matrix, cache_matrix, size):
+    program.add_immediate(1, 0, dram_matrix)   # r1 = addr_A (DRAM address for A)
+    program.add_immediate(2, 0, cache_matrix)  # r2 = cache_addr_A (GemmCache address for A)
+    program.add_immediate(3, 0, size)     # r3 = size of A
+    program.move_memory(1, 2, 3)               # Move A from DRAM to GemmCache
+
+def move_from_cache_to_dram(program, dram_matrix, cache_matrix, size):
+    program.add_immediate(1, 0, cache_matrix)  # r1 = cache_addr_C (GemmCache address for C)
+    program.add_immediate(2, 0, dram_matrix)   # r2 = addr_C (DRAM address for C)
+    program.add_immediate(3, 0, size)     # r3 = size of C
+    program.move_memory(1, 2, 3)               # Move C from GemmCache to DRAM
+
 for row in range(0, MATRIX_DIM, TILE_DIM):
     for col in range(0, MATRIX_DIM, TILE_DIM):
-        tile_height = min(TILE_DIM, MATRIX_DIM - row)
-        tile_width = min(TILE_DIM, MATRIX_DIM - col)
+        tile_height = TILE_DIM
+        tile_width = TILE_DIM
 
-        tile_size = tile_height * tile_width
+        # Initialize C tile with D tile
+        # D tile DRAM base:
+        d_tile_dram_base = addr_D + row * MATRIX_DIM + col
+        for r in range(tile_height):
+            row_start = d_tile_dram_base + r * MATRIX_DIM
+            move_from_dram_to_cache(program, row_start, cache_addr_C + r*TILE_DIM, TILE_DIM)
 
-        # fill cache matrices with 0s if tile size does not fit all of the available space
+        # Now accumulate A*B into C
+        for k in range(0, MATRIX_DIM, TILE_DIM):
 
-        for i in range(0, MATRIX_DIM, TILE_DIM):
+            # If the k-tile doesn't fully cover TILE_DIM, we still place it in the cache padded with zeros
+            # Move A tile: from A[row : row+tile_height, k : k+a_tile_width]
+            a_tile_dram_base = addr_A + row * MATRIX_DIM + k
+            for r in range(tile_height):
+                row_start = a_tile_dram_base + r * MATRIX_DIM
+                move_from_dram_to_cache(program, row_start, cache_addr_A  + r*TILE_DIM, TILE_DIM)
 
-            # perhaps calculate new DRAM addresses for the tiles
+            # Move B tile: from B[k : k+b_tile_height, col : col+tile_width]
+            b_tile_dram_base = addr_B + k * MATRIX_DIM + col
+            for r in range(tile_height):
+                row_start = b_tile_dram_base + r * MATRIX_DIM
+                move_from_dram_to_cache(program, row_start, cache_addr_B  + r*TILE_DIM, TILE_DIM)
 
-            # Move matrices from DRAM to GemmCache # TODO: FIX ADDRESSES MAYBE
-            program.add_immediate(1, 0, addr_A)        # r1 = addr_A (DRAM address for A)
-            program.add_immediate(2, 0, cache_addr_A)  # r2 = cache_addr_A (GemmCache address for A)
-            program.add_immediate(3, 0, tile_size)  # r3 = size of A
-            program.move_memory(1, 2, 3)               # Move A from DRAM to GemmCache
+            # Perform D = A*B
+            program.add_immediate(1, 0, cache_addr_D)  # r1 = D address in GemmCache
+            program.add_immediate(2, 0, cache_addr_A)  # r2 = A address in GemmCache
+            program.add_immediate(3, 0, cache_addr_B)  # r3 = B address in GemmCache
+            program.matrix_multiply(1, 2, 3)
 
-            program.add_immediate(1, 0, addr_B)        # r1 = addr_B (DRAM address for B)
-            program.add_immediate(2, 0, cache_addr_B)  # r2 = cache_addr_B (GemmCache address for B)
-            program.add_immediate(3, 0, tile_size)  # r3 = size of B
-            program.move_memory(1, 2, 3)               # Move B from DRAM to GemmCache
-
-            program.add_immediate(1, 0, addr_D)        # r1 = addr_D (DRAM address for D)
+            # Perform the matrix add in GemmCache
+            program.add_immediate(1, 0, cache_addr_C)  # r1 = cache_addr_C (GemmCache address for C)
             program.add_immediate(2, 0, cache_addr_D)  # r2 = cache_addr_D (GemmCache address for D)
-            program.add_immediate(3, 0, tile_size)  # r3 = size of D
-            program.move_memory(1, 2, 3)               # Move D from DRAM to GemmCache
+            program.matrix_add(1, 2, 1)                # Add C and D, store result in C
 
-            # Perform the matrix multiplication in GemmCache
-            program.add_immediate(1, 0, cache_addr_C)  # r1 = cache_addr_C (GemmCache address for C)
-            program.add_immediate(2, 0, cache_addr_A)  # r2 = cache_addr_A (GemmCache address for A)
-            program.add_immediate(3, 0, cache_addr_B)  # r3 = cache_addr_B (GemmCache address for B)
-            program.matrix_multiply(1, 2, 3)           # Multiply A and B, store result in C
-
-            # Move result matrix C from GemmCache back to DRAM
-            program.add_immediate(1, 0, cache_addr_C)  # r1 = cache_addr_C (GemmCache address for C)
-            program.add_immediate(2, 0, addr_C)        # r2 = addr_C (DRAM address for C)
-            program.add_immediate(3, 0, rows_C * cols_C)  # r3 = size of C
-            program.move_memory(1, 2, 3)               # Move C from GemmCache to DRAM
-
+        # After finishing accumulation over k, move C tile back to DRAM
+        c_tile_dram_base = addr_C + row * MATRIX_DIM + col
+        for r in range(TILE_DIM):
+            row_start = c_tile_dram_base + r * MATRIX_DIM
+            move_from_cache_to_dram(program, row_start, cache_addr_C  + r*TILE_DIM, TILE_DIM)
+        
 program.halt()
 
 # print("Program Instructions:")
@@ -137,12 +137,13 @@ for i in range(rows_C):
     matrix_C.append(row)
 
 print("Expected:\n", mat_C)
+print(mat_C.shape)
 print("Actual:\n", np.array(matrix_C))
+print(np.array(matrix_C).shape)
 
 if np.array_equal(mat_C, np.array(matrix_C)):
     print("Matmul is correct")
 else:
     print("Matmul is not correct")
 
-cpu.print_registers()
 

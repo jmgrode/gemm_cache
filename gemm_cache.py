@@ -21,9 +21,10 @@ class GemmCacheLatencies:
         self.matmul_latency = self.read_latency + systolic_array_latency + self.write_latency
 
 class GemmCache(MemObject):
-    def __init__(self, matrix_dim: int, num_matrices: int, gemm_cache_latencies: GemmCacheLatencies, bytes_per_element: int = 1) -> None:
+    def __init__(self, matrix_dim: int, num_matrices: int, addr_start: int, gemm_cache_latencies: GemmCacheLatencies, bytes_per_element: int = 1) -> None:
         size = matrix_dim * matrix_dim * num_matrices # size is also addr_range
         super().__init__(size, size, gemm_cache_latencies.read_latency, gemm_cache_latencies.write_latency)
+        self.addr_range = addr_start + size
         self.matrix_dim = matrix_dim
         self.num_matrices = num_matrices
         self.matmul_latency = gemm_cache_latencies.matmul_latency
