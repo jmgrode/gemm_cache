@@ -10,8 +10,8 @@ class GemmCacheLatencies:
         # base latencies
         self.read_latency = 1
         self.write_latency = 1
-        int8_add_latency = 1
-        int8_multiply_latency = 1
+        int8_add_latency = 0.5
+        int8_multiply_latency = 0.5
         
         # intermediate calculations
         processing_element_latency = int8_add_latency + int8_multiply_latency
