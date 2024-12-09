@@ -8,7 +8,7 @@ import numpy as np
 
 MATRIX_DIM = 4 # matrices are size MATRIX_DIM by MATRIX_DIM
 
-dram = Dram(32768, 100, 10)
+dram = Dram(32768, 0, 100, 10)
 # TODO: Either make Cache support variable size or fix it to a number
 cache = Cache(256, 32768, 8, 1, 1, dram) #TODO: change dram stuff arguments
 cpu_latencies = CpuLatencies()
