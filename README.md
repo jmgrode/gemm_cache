@@ -197,8 +197,6 @@ Extend or create new example scripts for more sophisticated matrix operations.
 
 ---
 
----
-
 ## **System Specifications and Heuristics**
 
 ### 1. **Cache**
