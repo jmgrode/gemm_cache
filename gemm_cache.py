@@ -5,6 +5,8 @@ from memory import MemObject
 from memory_array import MemoryArray
 from dram import Dram
 
+import math
+
 class GemmCacheLatencies:
     def __init__(self, matrix_dim: int) -> None:
         # base latencies
@@ -17,8 +19,8 @@ class GemmCacheLatencies:
         processing_element_latency = int8_add_latency + int8_multiply_latency
         systolic_array_latency = processing_element_latency * (3*matrix_dim - 1)
 
-        self.matadd_latency = self.read_latency + int8_add_latency + self.write_latency
-        self.matmul_latency = self.read_latency + systolic_array_latency + self.write_latency
+        self.matadd_latency = math.ceil(self.read_latency + int8_add_latency + self.write_latency)
+        self.matmul_latency = math.ceil(self.read_latency + systolic_array_latency + self.write_latency)
 
 class GemmCache(MemObject):
     def __init__(self, matrix_dim: int, num_matrices: int, addr_start: int, gemm_cache_latencies: GemmCacheLatencies, bytes_per_element: int = 1) -> None:
