@@ -87,17 +87,17 @@ program = Program(REGISTER_BYTES)
 # Move matrices from DRAM to GemmCache
 program.add_immediate(1, 0, addr_A)        # r1 = addr_A (DRAM address for A)
 program.add_immediate(2, 0, cache_addr_A)  # r2 = cache_addr_A (GemmCache address for A)
-program.add_immediate(3, 0, rows_A * cols_A)  # r3 = size of A
+program.add_immediate(3, 0, rows_A * MATRIX_DIM)  # r3 = size of A
 program.move_memory(1, 2, 3)               # Move A from DRAM to GemmCache
 
 program.add_immediate(1, 0, addr_B)        # r1 = addr_B (DRAM address for B)
 program.add_immediate(2, 0, cache_addr_B)  # r2 = cache_addr_B (GemmCache address for B)
-program.add_immediate(3, 0, rows_B * cols_B)  # r3 = size of B
+program.add_immediate(3, 0, rows_B * MATRIX_DIM)  # r3 = size of B
 program.move_memory(1, 2, 3)               # Move B from DRAM to GemmCache
 
 program.add_immediate(1, 0, addr_D)        # r1 = addr_D (DRAM address for D)
 program.add_immediate(2, 0, cache_addr_D)  # r2 = cache_addr_D (GemmCache address for D)
-program.add_immediate(3, 0, rows_D * cols_D)  # r3 = size of D
+program.add_immediate(3, 0, rows_D * MATRIX_DIM)  # r3 = size of D
 program.move_memory(1, 2, 3)               # Move D from DRAM to GemmCache
 
 # Perform the matrix multiplication in GemmCache
@@ -114,7 +114,7 @@ program.matrix_add(1, 2, 1)                # Add C and D, store result in C
 # Move result matrix C from GemmCache back to DRAM
 program.add_immediate(1, 0, cache_addr_C)  # r1 = cache_addr_C (GemmCache address for C)
 program.add_immediate(2, 0, addr_C)        # r2 = addr_C (DRAM address for C)
-program.add_immediate(3, 0, rows_C * cols_C)  # r3 = size of C
+program.add_immediate(3, 0, rows_C * MATRIX_DIM)  # r3 = size of C
 program.move_memory(1, 2, 3)               # Move C from GemmCache to DRAM
 
 program.halt()
