@@ -6,12 +6,14 @@ from gemm_cache import GemmCache, GemmCacheLatencies
 from program import Program
 import numpy as np
 
-MATRIX_DIM = 4 # matrices are size MATRIX_DIM by MATRIX_DIM
+MATRIX_DIM = 4 # input matrices are size MATRIX_DIM by MATRIX_DIM
+TILE_DIM = 6 # GemmCache matrices are size TILE_DIM by TILE_DIM
 
-dram_size = MATRIX_DIM * MATRIX_DIM *  5
+assert TILE_DIM >= MATRIX_DIM
+dram_size = TILE_DIM * TILE_DIM *  5
 dram = Dram(dram_size, 0, 100, 10)
-gemm_cache_latencies = GemmCacheLatencies(matrix_dim=MATRIX_DIM)
-gemm_cache = GemmCache(matrix_dim=MATRIX_DIM, num_matrices=4, addr_start=dram_size, gemm_cache_latencies=gemm_cache_latencies)
+gemm_cache_latencies = GemmCacheLatencies(matrix_dim=TILE_DIM)
+gemm_cache = GemmCache(matrix_dim=TILE_DIM, num_matrices=4, addr_start=dram_size, gemm_cache_latencies=gemm_cache_latencies)
 cpu_latencies = CpuLatencies()
 REGISTER_BYTES = 4
 cpu = Cpu([dram, gemm_cache], 32, REGISTER_BYTES, 1, cpu_latencies)
@@ -19,6 +21,12 @@ cpu = Cpu([dram, gemm_cache], 32, REGISTER_BYTES, 1, cpu_latencies)
 mat_A = np.random.randint(0, 2, size=(MATRIX_DIM, MATRIX_DIM), dtype=np.int8)
 mat_B = np.random.randint(0, 2, size=(MATRIX_DIM, MATRIX_DIM), dtype=np.int8)
 mat_D = np.random.randint(0, 2, size=(MATRIX_DIM, MATRIX_DIM), dtype=np.int8)
+
+padding_size = TILE_DIM - MATRIX_DIM
+mat_A = np.pad(mat_A, ((0, padding_size), (0, padding_size)), mode='constant', constant_values=0)
+mat_B = np.pad(mat_B, ((0, padding_size), (0, padding_size)), mode='constant', constant_values=0)
+mat_D = np.pad(mat_D, ((0, padding_size), (0, padding_size)), mode='constant', constant_values=0)
+
 mat_C = np.add(np.matmul(mat_A, mat_B), mat_D)
 
 rows_A, cols_A = mat_A.shape
