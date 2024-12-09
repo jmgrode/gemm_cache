@@ -134,8 +134,6 @@ Choose a file based on your use case. For example:
 - `large_matrix.py` for testing operations on large matrices.
 - `gemm_cache_test.py` or `cache_test.py` for unit testing specific components.
 
-python baseline.py
-
 ---
 
 ### Sample Workflow: Matrix Multiply and Add
@@ -233,7 +231,7 @@ Extend or create new example scripts for more sophisticated matrix operations.
       - 1 8-bit adder.
       - 8 flip-flops.
 - **Matrix Multiply Latency:** 
-  - \(2 \times (3d - 1)\) cycles, where \(d\) is the height of the square matrix.
+  - \(2 * (3d - 1)\) cycles, where \(d\) is the height of the square matrix.
 
 ---
 
