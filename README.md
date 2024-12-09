@@ -109,20 +109,22 @@ The framework is implemented in Python and is designed for educational and exper
 
 2. **Directory Structure**
 
-.
-├── baseline.py
-├── cache_test.py
-├── cpu.py
-├── dram.py
-├── gemm_cache.py
-├── gemm_cache_test.py
-├── large_matrix.py
-├── matrix.py
-├── memory.py
-├── memory_array.py
-├── packet.py
-├── program.py
-└── simple.py
+<pre>
+.&nbsp;&nbsp;&nbsp;├── baseline.py
+&nbsp;&nbsp;&nbsp;├── cache_test.py
+&nbsp;&nbsp;&nbsp;├── cpu.py
+&nbsp;&nbsp;&nbsp;├── dram.py
+&nbsp;&nbsp;&nbsp;├── gemm_cache.py
+&nbsp;&nbsp;&nbsp;├── gemm_cache_test.py
+&nbsp;&nbsp;&nbsp;├── large_matrix.py
+&nbsp;&nbsp;&nbsp;├── matrix.py
+&nbsp;&nbsp;&nbsp;├── memory.py
+&nbsp;&nbsp;&nbsp;├── memory_array.py
+&nbsp;&nbsp;&nbsp;├── packet.py
+&nbsp;&nbsp;&nbsp;├── program.py
+&nbsp;&nbsp;&nbsp;└── simple.py
+</pre>
+
 
 
 3. **Run Examples**
