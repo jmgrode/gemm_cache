@@ -110,7 +110,7 @@ The framework is implemented in Python and is designed for educational and exper
 2. **Directory Structure**
 
 <pre>
-.&nbsp;&nbsp;&nbsp;├── baseline.py
+&nbsp;&nbsp;&nbsp;├── baseline.py
 &nbsp;&nbsp;&nbsp;├── cache_test.py
 &nbsp;&nbsp;&nbsp;├── cpu.py
 &nbsp;&nbsp;&nbsp;├── dram.py
