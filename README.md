@@ -13,8 +13,9 @@ The framework is implemented in Python and is designed for educational and exper
 
 1. **Dependencies**
    Ensure Python 3.7+ is installed along with `numpy` for matrix operations.
-
-   pip install numpy
+```
+   pip3 install numpy
+```
 
 2. **Directory Structure**
 
@@ -38,6 +39,9 @@ The framework is implemented in Python and is designed for educational and exper
 
 3. **Run Examples**
 Choose a file based on your use case. For example:
+```
+python3 simple.py
+```
 - `simple.py` for running a simple program to demonstrate basic CPU operations with a standard cache.
 - `baseline.py` for initializing matrices and validating GeMM operations with a standard cache.
 - `matrix.py` for testing operations on small matrices with GemmCache.
