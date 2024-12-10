@@ -6,10 +6,10 @@ from gemm_cache import GemmCache, GemmCacheLatencies
 from program import Program
 import numpy as np
 
-
 MATRIX_DIM = 25
 TILE_DIM = 5
 
+assert MATRIX_DIM % TILE_DIM == 0
 dram_size = MATRIX_DIM * MATRIX_DIM * 5
 dram = Dram(dram_size, 0, 100, 10)
 gemm_cache_latencies = GemmCacheLatencies(matrix_dim=TILE_DIM)
@@ -18,6 +18,7 @@ cpu_latencies = CpuLatencies()
 REGISTER_BYTES = 4
 cpu = Cpu([dram, gemm_cache], 32, REGISTER_BYTES, 1, cpu_latencies)
 
+# Generate matrix values
 mat_A = np.random.randint(0, 2, size=(MATRIX_DIM, MATRIX_DIM), dtype=np.int8)
 mat_B = np.random.randint(0, 2, size=(MATRIX_DIM, MATRIX_DIM), dtype=np.int8)
 mat_D = np.random.randint(0, 2, size=(MATRIX_DIM, MATRIX_DIM), dtype=np.int8)
@@ -119,11 +120,6 @@ for row in range(0, MATRIX_DIM, TILE_DIM):
         
 program.halt()
 
-# print("Program Instructions:")
-# for instruction in program.instructions:
-#     print(instruction)
-# -----------------------------------------
-
 cpu.run_program(program)
 
 print("Resultant Matrix C:")
@@ -145,5 +141,3 @@ if np.array_equal(mat_C, np.array(matrix_C)):
     print("Matmul is correct")
 else:
     print("Matmul is not correct")
-
-

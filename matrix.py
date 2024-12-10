@@ -7,7 +7,7 @@ from program import Program
 import numpy as np
 
 MATRIX_DIM = 4 # input matrices are size MATRIX_DIM by MATRIX_DIM
-TILE_DIM = 6 # GemmCache matrices are size TILE_DIM by TILE_DIM
+TILE_DIM = 4 # GemmCache matrices are size TILE_DIM by TILE_DIM
 
 assert TILE_DIM >= MATRIX_DIM
 dram_size = TILE_DIM * TILE_DIM *  5
@@ -18,10 +18,12 @@ cpu_latencies = CpuLatencies()
 REGISTER_BYTES = 4
 cpu = Cpu([dram, gemm_cache], 32, REGISTER_BYTES, 1, cpu_latencies)
 
+# Generate matrix values
 mat_A = np.random.randint(0, 2, size=(MATRIX_DIM, MATRIX_DIM), dtype=np.int8)
 mat_B = np.random.randint(0, 2, size=(MATRIX_DIM, MATRIX_DIM), dtype=np.int8)
 mat_D = np.random.randint(0, 2, size=(MATRIX_DIM, MATRIX_DIM), dtype=np.int8)
 
+# Pad matrices if TILE_DIM > MATRIX_DIM
 padding_size = TILE_DIM - MATRIX_DIM
 mat_A = np.pad(mat_A, ((0, padding_size), (0, padding_size)), mode='constant', constant_values=0)
 mat_B = np.pad(mat_B, ((0, padding_size), (0, padding_size)), mode='constant', constant_values=0)
@@ -63,23 +65,23 @@ for i in range(rows_D):
     for j in range(cols_D):
         dram.set_value(addr_D + (i * cols_D + j), 1, matrix_D[i][j])
 
-# print("Matrix A in DRAM:")
-# for i in range(rows_A):
-#     for j in range(cols_A):
-#         value = dram.memory.load(addr_A + (i * cols_A + j), 1)
-#         print(f"A[{i}][{j}] = {value}")
+print("Matrix A in DRAM:")
+for i in range(rows_A):
+    for j in range(cols_A):
+        value = dram.memory.load(addr_A + (i * cols_A + j), 1)
+        print(f"A[{i}][{j}] = {value}")
 
-# print("Matrix B in DRAM:")
-# for i in range(rows_B):
-#     for j in range(cols_B):
-#         value = dram.memory.load(addr_B + (i * cols_B + j), 1)
-#         print(f"B[{i}][{j}] = {value}")
+print("Matrix B in DRAM:")
+for i in range(rows_B):
+    for j in range(cols_B):
+        value = dram.memory.load(addr_B + (i * cols_B + j), 1)
+        print(f"B[{i}][{j}] = {value}")
 
-# print("Matrix D in DRAM:")
-# for i in range(rows_D):
-#     for j in range(cols_D):
-#         value = dram.memory.load(addr_D + (i * cols_D + j), 1)
-#         print(f"D[{i}][{j}] = {value}")
+print("Matrix D in DRAM:")
+for i in range(rows_D):
+    for j in range(cols_D):
+        value = dram.memory.load(addr_D + (i * cols_D + j), 1)
+        print(f"D[{i}][{j}] = {value}")
 
 # Create the program for matrix multiplication
 program = Program(REGISTER_BYTES)
@@ -119,11 +121,6 @@ program.move_memory(1, 2, 3)               # Move C from GemmCache to DRAM
 
 program.halt()
 
-# print("Program Instructions:")
-# for instruction in program.instructions:
-#     print(instruction)
-# -----------------------------------------
-
 cpu.run_program(program)
 
 print("Resultant Matrix C:")
@@ -145,6 +142,3 @@ if np.array_equal(mat_C, np.array(matrix_C)):
     print("GeMM is correct")
 else:
     print("GeMM is not correct")
-
-cpu.print_registers()
-

@@ -9,19 +9,12 @@ import numpy as np
 MATRIX_DIM = 4 # matrices are size MATRIX_DIM by MATRIX_DIM
 
 dram = Dram(32768, 0, 100, 10)
-# TODO: Either make Cache support variable size or fix it to a number
-cache = Cache(256, 32768, 8, 1, 1, dram) #TODO: change dram stuff arguments
+cache = Cache(256, 32768, 8, 1, 1, dram)
 cpu_latencies = CpuLatencies()
 REGISTER_BYTES = 4
 cpu = Cpu([cache], 32, REGISTER_BYTES, -1, cpu_latencies)
 
-# -----------------------------------------
-# Initialize matrices in DRAM
-# Example matrices:
-# A = [[1, 2], [3, 4]]
-# B = [[5, 6], [7, 8]]
-# Expected C = [[19, 22], [43, 50]]
-
+# Generate matrix values
 mat_A = np.random.randint(0, 2, size=(MATRIX_DIM, MATRIX_DIM), dtype=np.int8)
 mat_B = np.random.randint(0, 2, size=(MATRIX_DIM, MATRIX_DIM), dtype=np.int8)
 mat_D = np.random.randint(0, 2, size=(MATRIX_DIM, MATRIX_DIM), dtype=np.int8)
@@ -133,9 +126,3 @@ if np.array_equal(mat_C, np.array(matrix_C)):
     print("GeMM is correct")
 else:
     print("GeMM is not correct")
-
-# cpu.print_registers()
-# for addr,data in cache.cache.array.items():
-#     dram.memory[addr] = data
-dram.print(0)
-#cpu.print_memory()
