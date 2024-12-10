@@ -7,6 +7,45 @@ The framework is implemented in Python and is designed for educational and exper
 
 ---
 
+## **Usage Guide**
+
+### Setting Up
+
+1. **Dependencies**
+   Ensure Python 3.7+ is installed along with `numpy` for matrix operations.
+
+   pip install numpy
+
+2. **Directory Structure**
+
+<pre>
+&nbsp;&nbsp;&nbsp;├── baseline.py
+&nbsp;&nbsp;&nbsp;├── cache_test.py
+&nbsp;&nbsp;&nbsp;├── cpu.py
+&nbsp;&nbsp;&nbsp;├── dram.py
+&nbsp;&nbsp;&nbsp;├── gemm_cache.py
+&nbsp;&nbsp;&nbsp;├── gemm_cache_test.py
+&nbsp;&nbsp;&nbsp;├── large_matrix.py
+&nbsp;&nbsp;&nbsp;├── matrix.py
+&nbsp;&nbsp;&nbsp;├── memory.py
+&nbsp;&nbsp;&nbsp;├── memory_array.py
+&nbsp;&nbsp;&nbsp;├── packet.py
+&nbsp;&nbsp;&nbsp;├── program.py
+&nbsp;&nbsp;&nbsp;└── simple.py
+</pre>
+
+
+
+3. **Run Examples**
+Choose a file based on your use case. For example:
+- `simple.py` for running a simple program to demonstrate basic CPU operations with a standard cache.
+- `baseline.py` for initializing matrices and validating GeMM operations with a standard cache.
+- `matrix.py` for testing operations on small matrices with GemmCache.
+- `large_matrix.py` for testing operations on large matrices with GemmCache.
+- `gemm_cache_test.py` or `cache_test.py` for unit testing specific components.
+
+---
+
 ## **Key Components**
 
 ### 1. **DRAM**
@@ -84,55 +123,44 @@ The framework is implemented in Python and is designed for educational and exper
 
 ## **Instructions Overview**
 
-### Supported Instructions
+### Special Instructions
 | **Instruction**      | **Purpose**                                  | **Example**                        |
 |-----------------------|----------------------------------------------|------------------------------------|
-| `load`               | Load data from memory to register            | `load(1, 0, 100)`                 |
-| `store`              | Store register data to memory                | `store(1, 0, 100)`                |
-| `move`               | Move immediate value to register             | `move(1, 42)`                     |
-| `add`                | Add two registers and store result           | `add(3, 1, 2)`                    |
-| `multiply`           | Multiply two registers and store result      | `multiply(3, 1, 2)`               |
 | `matrix_multiply`    | Perform matrix multiplication in cache       | `matrix_multiply(1, 2, 3)`        |
 | `matrix_add`         | Perform matrix addition in cache             | `matrix_add(1, 2, 3)`             |
 | `halt`               | Stop program execution                       | `halt()`                          |
 
----
+### Memory Instructions
+| **Instruction**      | **Purpose**                                  | **Example**                        |
+|-----------------------|----------------------------------------------|------------------------------------|
+| `move_memory`        | Copy memory block to another address         | `move_memory(1, 2, 3)`            |
+| `load`               | Load data from memory to register            | `load(1, 0, 100)`                 |
+| `store`              | Store register data to memory                | `store(1, 0, 100)`                |
+| `load_byte`          | Load byte from memory to register            | `load_byte(1, 0, 100)`            |
+| `store_byte`         | Store lowest register byte data to memory    | `store_byte(1, 0, 100)`           |
 
-## **Usage Guide**
+### ALU Instructions
+| **Instruction**       | **Purpose**                                  | **Example**                        |
+|------------------------|----------------------------------------------|------------------------------------|
+| `move`                | Move immediate value to register             | `move(1, 42)`                     |
+| `add`                 | Add two registers and store result           | `add(3, 1, 2)`                    |
+| `add_immediate`       | Add immediate to register value              | `add_immediate(2, 1, 256)`        |
+| `multiply`            | Multiply two registers and store result      | `multiply(3, 1, 2)`               |
+| `bitwise_not`         | NOT register and store result                | `bitwise_not(2, 1)`               |
+| `bitwise_or`          | OR two registers and store result            | `bitwise_or(3, 1, 2)`             |
+| `bitwise_and`         | AND two registers and store result           | `bitwise_and(3, 1, 2)`            |
+| `bitwise_xor`         | XOR two registers and store result           | `bitwise_xor(3, 1, 2)`            |
+| `logical_shift_left`  | Shift register to left and store result      | `logical_shift_left(3, 1, 2)`     |
+| `logical_shift_right` | Shift register to right and store result     | `logical_shift_right(3, 1, 2)`    |
 
-### Setting Up
-
-1. **Dependencies**
-   Ensure Python 3.7+ is installed along with `numpy` for matrix operations.
-
-   pip install numpy
-
-2. **Directory Structure**
-
-<pre>
-&nbsp;&nbsp;&nbsp;├── baseline.py
-&nbsp;&nbsp;&nbsp;├── cache_test.py
-&nbsp;&nbsp;&nbsp;├── cpu.py
-&nbsp;&nbsp;&nbsp;├── dram.py
-&nbsp;&nbsp;&nbsp;├── gemm_cache.py
-&nbsp;&nbsp;&nbsp;├── gemm_cache_test.py
-&nbsp;&nbsp;&nbsp;├── large_matrix.py
-&nbsp;&nbsp;&nbsp;├── matrix.py
-&nbsp;&nbsp;&nbsp;├── memory.py
-&nbsp;&nbsp;&nbsp;├── memory_array.py
-&nbsp;&nbsp;&nbsp;├── packet.py
-&nbsp;&nbsp;&nbsp;├── program.py
-&nbsp;&nbsp;&nbsp;└── simple.py
-</pre>
-
-
-
-3. **Run Examples**
-Choose a file based on your use case. For example:
-- `baseline.py` for initializing matrices and validating GeMM operations.
-- `simple.py` for running a simple program to demonstrate basic CPU operations.
-- `large_matrix.py` for testing operations on large matrices.
-- `gemm_cache_test.py` or `cache_test.py` for unit testing specific components.
+### Branch Instructions
+| **Instruction**      | **Purpose**                                  | **Example**                        |
+|-----------------------|----------------------------------------------|------------------------------------|
+| `insert_label`       | Macro for inserting label for branches/jumps | `insert_label("loop")`            |
+| `label_branch_if`    | Macro for branching to label                 | `label_branch_if(1, "loop")`      |
+| `label_jump`         | Macro for jumping to label                   | `label_jump(1, "loop")`           |
+| `branch_if`          | If register, branch to PC plus immediate     | `branch_if(1, -10)`               |
+| `jump`               | Jump to register value                       | `jump(1)`                         |
 
 ---
 
@@ -141,9 +169,11 @@ Choose a file based on your use case. For example:
 1. **Initialize DRAM**
 Define matrices `A`, `B`, and `D` in any example script (e.g., `baseline.py`).
 
+```
 mat_A = np.random.randint(0, 2, size=(4, 4), dtype=np.int8)
 mat_B = np.random.randint(0, 2, size=(4, 4), dtype=np.int8)
 mat_D = np.random.randint(0, 2, size=(4, 4), dtype=np.int8)
+```
 
 2. **Create a Program**
 Define operations to:
@@ -151,20 +181,26 @@ Define operations to:
 - Perform matrix multiplication and addition.
 - Store the result back into DRAM.
 
+```
 program = Program(REGISTER_BYTES)
 program.matrix_multiply(1, 2, 3)
 program.matrix_add(1, 2, 1)
 program.halt()
+```
 
 3. **Run the Program**
 Execute the program using the CPU.
 
+```
 cpu.run_program(program)
+```
 
 4. **Validate Results**
 Compare the computed result with the expected output.
 
+```
 assert np.array_equal(mat_C, np.array(matrix_C))
+```
 
 ---
 
@@ -191,7 +227,6 @@ Extend or create new example scripts for more sophisticated matrix operations.
 
 ## **Known Limitations**
 
-- Assumes perfect alignment of matrix dimensions.
 - Limited support for variable-sized cache blocks.
 - Designed for single-threaded simulation only.
 
@@ -199,37 +234,25 @@ Extend or create new example scripts for more sophisticated matrix operations.
 
 ## **System Specifications and Heuristics**
 
-### 1. **Cache**
-- **Cache Size:** 32KB
-- **Workload Sizes:** 
-  - 4KB
-  - 8KB
-- **Note:** Currently, workloads larger than the GemmCache matrix size are not supported. This is a planned feature.
-
----
-
-### 2. **Area Heuristics**
+### 1. **Area Heuristics**
 - **Components Considered:**
   - Number of adders.
   - Number of multipliers.
   - Number of flip-flops.
-  - Number of comparators.
-  - Number of sense amplifiers.
-  - Other peripherals specific to scratchpad memory.
-  - SRAM memory overhead based on the number of cells.
+  - Cache area (from CACTI)
+  - Scratchpad area (from CACTI)
 
 ---
 
-### 3. **GemmCache**
+### 2. **GemmCache**
 - **Area Heuristics:**
   - Each entry of the output matrix uses:
-    - 1 8-bit adder.
     - 1 processing element, consisting of:
       - 1 8-bit multiplier.
       - 1 8-bit adder.
       - 8 flip-flops.
 - **Matrix Multiply Latency:** 
-  - \(2 * (3d - 1)\) cycles, where \(d\) is the height of the square matrix.
+  - 3d - 1 cycles, where \(d\) is the height of the square matrix.
 
 ---
 
