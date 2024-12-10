@@ -6,6 +6,7 @@ from memory import MemObject
 from program import Program
 
 class CpuLatencies:
+    # estimates of latencies for each instruction based on average CPI
     def __init__(self) -> None:
         self.add_latency = 1
         self.multiply_latency = 3
