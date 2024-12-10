@@ -5,7 +5,7 @@ from dram import Dram
 from gemm_cache import GemmCache, Cache
 from program import Program
 
-dram = Dram(32768, 100, 10)
+dram = Dram(32768, 0, 100, 10)
 cache = Cache(1024, 32768, 8, 1, 1, dram)
 cpu_latencies = CpuLatencies()
 REGISTER_BYTES = 4
